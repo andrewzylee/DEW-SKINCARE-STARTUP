@@ -1,0 +1,33 @@
+/* STACK design tokens — clean light theme (Beli-leaning: bright, cool-neutral, crisp).
+   Values are space-separated RGB channels so Tailwind can inject alpha
+   (rgb(var(--x) / <alpha-value>)), making opacity utilities like bg-ink/10 work.
+   Hex equivalents are noted for reference. */
+:root {
+  --bg: 246 247 248; /* #f6f7f8 — clean cool canvas */
+  --surface: 255 255 255; /* #ffffff — cards */
+  --ink: 15 17 21; /* #0f1115 — near-black, faintly cool */
+  --muted: 138 143 153; /* #8a8f99 — cool gray secondary text */
+  --line: 236 236 240; /* #ececf0 — light hairline borders */
+
+  --accent: 12 143 98; /* #0c8f62 — clean deep emerald, primary actions */
+  --accent-ink: 10 122 82; /* #0a7a52 — green text on light */
+  --accent-soft: 231 244 238; /* #e7f4ee — faint emerald tint for fills/pills */
+  --accent-bright: 23 200 139; /* #17c88b — mint pop: streak, highlights */
+
+  /* domain identity — skincare rides the emerald accent; makeup gets a warm coral so the
+     two co-equal domains read distinct without going pink-girly (co-ed by design). */
+  --skin: 12 143 98; /* = accent (emerald) */
+  --skin-soft: 231 244 238;
+  --makeup: 230 106 74; /* #e66a4a — warm coral */
+  --makeup-ink: 197 78 50; /* #c54e32 — coral text on light */
+  --makeup-soft: 252 235 229; /* #fcebe5 — faint coral tint for fills/pills */
+
+  /* tier colors — desaturated, tasteful, cool-clean */
+  --tier-s: 215 161 58; /* #d7a13a — refined gold */
+  --tier-a: 23 181 127; /* #17b57f — green */
+  --tier-b: 75 131 240; /* #4b83f0 — blue */
+  --tier-c: 154 160 169; /* #9aa0a9 — cool gray */
+  --tier-f: 236 106 90; /* #ec6a5a — clean coral */
+
+  --app-max: 430px;
+}
