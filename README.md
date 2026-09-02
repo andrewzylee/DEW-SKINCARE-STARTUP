@@ -1,10 +1,63 @@
-# STACK — your skin, sorted
+# Dew — rank your beauty
 
-A mobile-first web prototype for a **skincare app** (for everyone). It's a decision-and-record
-utility — research, simplify, rank — not a social feed. The signature interaction is
-**Beli-style pairwise ranking** applied to skincare.
+**Beli for Beauty.** A mobile-first web prototype where you rank the makeup, skincare, and
+fragrance you've actually tried — and discover what people with *your* taste and *your* skin
+genuinely love. The signature interaction is **Beli-style pairwise ranking**: "which one do you
+like more?" beats "give it 8.3 stars," and it compounds into a personal **taste graph** that makes
+recommendations feel like a friend's, not a stranger's.
 
-> Prototype v0.1 · mock data only · no backend, no auth, on-device (localStorage).
+> Prototype · mock data only · no backend, no auth · on-device (localStorage).
+
+---
+
+## Why Dew
+
+Beauty discovery today is TikTok → sponsored product → thousands of stranger reviews → 🤷. Dew
+replaces that with: **people you know + people with your skin + people with your taste → what they
+rank highest → try → rank → your friends discover it.** The ranked taste profile — not a review —
+is the core object.
+
+- **Makeup** brings frequency, visual appeal, and virality.
+- **Skincare** brings depth, personalization, and long-term outcomes.
+- **Fragrance** is the cleanest on-ramp (highly rankable, no shade/phenotype problem).
+
+Positioning is **all-genders, Gen-Z, interest-led** — you pick *what you're into*, never a gender.
+
+## The core loop
+
+**Try → Rank → build your taste profile → see friends' rankings → find your taste twins → discover → try.**
+
+## Features
+
+- **Interest-based onboarding** — "What are you into?" (Skincare / Makeup / Fragrance live, Hair
+  soon). Interests prune the quiz (skincare-only users skip the makeup shade questions) and shape
+  the feed — never a "male/female" split.
+- **Pairwise ranking engine** — binary-search insertion (~log₂n comparisons), **per category** (you
+  rank blushes against blushes). Signature unit is **"#2 of 14 blushes,"** not a decimal score.
+  - A quick **reaction** (😍→💀) when you add a product seeds where the search starts (fewer taps).
+  - An optional **"how close?"** tap at the end tunes the gap to the item above.
+  - **Reaction-anchored tiers** (S/A/B/C/F): S is *earned* (you have to love it) — a lone "meh"
+    product is a B, not an automatic S.
+  - **Drag-to-reorder** any category — your list is the source of truth, and tiers re-compute live.
+- **Taste Match** — the moat. Turns two ranked shelves into a 0–100 match, **consensus-discounted**
+  (agreeing on divisive picks counts more than on universal favorites) and **per-domain**
+  (Makeup Taste is aesthetic; Skincare Match is phenotype-gated by skin type). Works at n=0 via a
+  style-tag fallback.
+- **Shade Match** — the acquisition wedge. Tone + undertone → shade-aware picks for
+  foundation/concealer/blush/lip, plus "people with your skin." Works solo (no social graph needed).
+- **Rank-change feed** — "Latest moves": *new #1*, *↑2*, *dropped out of top 5* — dynamic,
+  ranking-native social content a star-review app can't produce.
+- **Product page** — retailer-style detail: hero + badges, star rating, tag pills, your **Skin/Scent
+  Match**, a community-rating histogram, a top review, and a sticky **Add to routine** bar.
+- **Profile** — your beauty-taste archetype, per-domain counts, a ranked **fragrance wardrobe**,
+  streak, Recent Activity, and a shareable **Beauty Wrapped**.
+- **Log** — fast daily check-in (AM/PM checklists, a no-face skin rating, a note) with a **Log
+  today** submit + streak.
+
+## Tech
+
+Vite · React 18 · TypeScript · Tailwind CSS · framer-motion · lucide-react. State is a React
+Context over `localStorage` (single-user, on-device). No backend or auth.
 
 ## Run it
 
@@ -13,108 +66,32 @@ npm install
 npm run dev
 ```
 
-Open the printed URL (default **http://localhost:5180**). Best viewed at phone width — on a
-wide screen it centers in a device frame at ~430px.
-
-Other scripts:
+Open the printed URL (default **http://localhost:5180**). Best viewed at phone width — on a wide
+screen it centers in a device frame.
 
 ```bash
-npm run build   # typecheck + production build to dist/
-npm run preview # serve the production build
-npm run lint    # tsc --noEmit
+npm run build     # typecheck (tsc --noEmit) + production build to dist/
+npm run preview   # serve the production build
 ```
-
-## The core loop
-
-Onboard → get your ranked starter **Stack** → **Log** what you use (streak) → **Rank** what
-you've tried (tier list) → see what your **friends** love and hate.
-
-Five tabs (Beli-style, with a prominent center **Log +**) + a first-run quiz:
-
-- **Feed** (home) — search, For You / Trending / Friend recs chips, horizontally-scrolling
-  Featured Lists (with a live "you use X of Y"), a "works for skin like yours" cohort strip, and
-  a friend-activity feed (who ranked what, their tier, notes, likes). The **hamburger** opens a
-  Beli-style slide-out **Menu** (invite friends, unlock pro, add your school, settings, skin
-  goal, skin type, home city, concerns, ingredients to avoid, import routine, FAQ, log out…) —
-  skincare-relevant items only. Skin type / concerns / home city / school are inline-editable;
-  **Ingredients to avoid** is a dermatologist-grade grouped multi-select (INCI names + clinical
-  notes, persisted); **Import your routine** pastes a product list, scores best-matches against
-  the catalog, and adds them to your Shelf.
-- **Stack** — your personalized AM/PM routine (step-numbered, product photos, one-line "why",
-  price, a "using this" toggle, and lightweight swaps).
-- **Log** — fast daily check-in: AM/PM checklists (with "mark all"), a no-face 5-point "skin
-  today" rating, a note, and a streak ring that pops on completion.
-- **Shelf** — the ranking engine + your trials. "Rank" runs pairwise
-  "which did more for your skin?" comparisons (binary-search insertion, ~log₂n) into an
-  **S/A/B/C/F** tier list; "Start a trial" tracks a product over time (see below).
-
-**Skin Match + Trials (the "results, not products" layer).** Tapping any product (feed, search,
-"works for skin like yours") opens a **Skin Match** sheet: a personalized 0–100 score with
-reasons — ingredient/attribute-seeded so it works at n=0 (`src/lib/skinMatch.ts`), nudged by
-mock community results (loved / neutral / stopped, cohort repurchase %). From there you **start
-a trial**: a product tracked over a target window with periodic outcome check-ins (texture /
-breakouts / dryness / redness vs. baseline) and a final **verdict** (overall 1–10 + repurchase)
-that flows the product into your Shelf ranking, placed by your score. Trials live on the Shelf
-("In trial") and count on your Profile.
-- **Profile** — editable **photo** (on-device), @handle, bio, **followers / following**, a
-  **streak & activity** card, your lists (ranked, in-routine, days logged), and Beli-style
-  **Recent Activity / Playlists** tabs. Recent Activity is a feed of your own posts (reviewed a
-  trial, ranked a product, checked in) each with a score/tier badge; tapping any post — here or
-  in the Feed — opens a **Post detail** with the score, review, and a **comments thread** you
-  can read and add to (likes + comments persist). Tapping an **avatar** (feed, comments,
-  followers/following) opens that person's **friend profile** — their bio, stats, and Recent
-  Activity / Playlists. The Profile also has a **Skin Wrapped** card — a Spotify-Wrapped-style
-  year summary (streak, holy grails, products tried, $ spent, top brand, best skin month…)
-  computed from your data and built to screenshot-share.
-- **Progress** — the Feed calendar icon (and the Profile streak card) opens a month **streak
-  calendar**, current/longest streak + check-in stats, and an adjustable **weekly goal** with a
-  next-milestone tracker.
 
 ## Structure
 
 ```
 src/
-  data/mockCatalog.ts     # ~30 seed products + lookalike cohort stats (PLACEHOLDER DATA)
-  data/quiz.ts            # onboarding quiz (data-driven) + answers -> profile
-  data/social.ts          # mock friends, feed activity, featured lists (PLACEHOLDER DATA)
-  lib/stackGenerator.ts   # quiz profile -> AM/PM routine (rules-based, explainable)
-  lib/ranking.ts          # pairwise insert (resumable) + tier bands
-  lib/{date,motion,cn,image,productImages}.ts
-  state/store.tsx         # Context + localStorage; streak; shelf; logs; account
-  components/             # Card, PillButton, TierBadge, SegmentedToggle, ProgressBar, TabBar,
-                          # StreakRing, SkinRating, CompareCard, Sheet, Avatar, ProductImage, …
-  screens/               # Onboarding, Feed, Stack, Log, Shelf, Profile
-  styles/tokens.css      # design tokens (clean light base, emerald accent, tier colors)
+  data/mockCatalog.ts   # ~55 products across skincare / makeup / fragrance (PLACEHOLDER DATA)
+  data/quiz.ts          # onboarding quiz + interests + resolve→profile
+  data/social.ts        # friends, feed, rank-moves, featured lists (PLACEHOLDER DATA)
+  lib/ranking.ts        # pairwise insertion, reaction seeding, reaction-anchored tiers
+  lib/taste.ts          # Taste Match (consensus-discounted, per-domain, phenotype-gated)
+  lib/shadeMatch.ts     # Shade Match wedge
+  lib/skinMatch.ts      # per-product match score (ingredient/attribute-seeded)
+  state/store.tsx       # Context + localStorage: shelf, tiers, logs, trials, rank events
+  state/ui.tsx          # app-wide overlays (product page, shade, lists, friends, wrapped)
+  components/ · screens/ # Feed, Shelf, Log, Routine, Profile, ProductSheet, ShadeMatchView, …
 ```
 
-## Design system
+## Out of scope (prototype)
 
-Clean light theme (Beli-leaning): a cool near-white canvas (`#F6F7F8`), white cards with soft
-shadows, one deep-emerald accent (`#0C8F62`) plus a mint pop for streaks/highlights, big
-confident type (Inter) with **mono numerals** (JetBrains Mono), generous whitespace, big
-rounded cards, and tasteful spring motion (framer-motion). Never pastel-girly, never
-corporate-blue.
-
-Colors are defined as RGB-channel CSS variables in `src/styles/tokens.css` and mapped to
-Tailwind via `rgb(var(--x) / <alpha-value>)`, so opacity utilities (`bg-ink/10`,
-`bg-surface/85`, …) work against the tokens.
-
-### Product photos
-
-All ~30 products ship with **real product photos** in `src/assets/products/<id>.jpg`, sourced
-from the Open Beauty Facts database + retailer/brand CDNs (clean product-on-white shots). They're
-auto-loaded by `src/lib/productImages.ts` (a glob over that folder), and any product without a
-file falls back to a clean brand-monogram tile. To swap one, just drop a new `<id>.jpg` in that
-folder (see [`src/assets/products/README.md`](src/assets/products/README.md)) or set an `image:`
-URL on the product in `mockCatalog.ts`.
-
-Motion note: framer-motion respects `prefers-reduced-motion`. Screen entrances are enhancement
-only — content mounts immediately even if the animation loop is paused.
-
-## Out of scope (v0)
-
-No real backend/API, auth, real checkout/affiliate (restock = placeholder link), face-scan,
-camera/photo upload, social graph/feed, or push notifications.
-
-**Product data is placeholder** — facts/tags are realistic, prices are approximate and for
-prototype display only.
+No real backend/API, auth, checkout/affiliate, camera/selfie shade scan, real social graph, or
+push notifications. **All product facts, ratings, reviews, community stats, and match scores are
+mock data for demonstration.**

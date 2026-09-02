@@ -1,7 +1,16 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDown, ArrowLeft, ArrowUp, FlaskConical, Plus, Search, Trash2 } from 'lucide-react';
+import { motion, Reorder, useDragControls } from 'framer-motion';
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  FlaskConical,
+  GripVertical,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
 import {
   catalog,
   getProduct,
@@ -21,10 +30,10 @@ import {
   tierVar,
   type CompareSession,
   type Reaction,
+  type Strength,
   type Tier,
 } from '../lib/ranking';
 import { cn } from '../lib/cn';
-import { listContainer, listItem, spring } from '../lib/motion';
 import { PillButton } from '../components/PillButton';
 import { TierBadge } from '../components/TierBadge';
 import { CompareCard } from '../components/CompareCard';
@@ -66,6 +75,7 @@ export function Shelf() {
   const {
     rankedShelf,
     insertShelfInCategory,
+    reorderCategory,
     removeFromShelf,
     updateShelfNote,
     isOnShelf,
@@ -122,9 +132,13 @@ export function Shelf() {
     }
   };
 
-  const finishRank = (reason?: string) => {
+  const finishRank = (reason?: string, strength?: Strength) => {
     if (!flow || flow.landed == null) return;
-    insertShelfInCategory(flow.productId, flow.landed, { reaction: flow.reaction, reason });
+    insertShelfInCategory(flow.productId, flow.landed, {
+      reaction: flow.reaction,
+      reason,
+      strength,
+    });
     setFlow(null);
   };
 
@@ -154,7 +168,7 @@ export function Shelf() {
     <div className="pb-8">
       <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-6">
         <div>
-          <h1 className="text-[28px] font-bold leading-none tracking-tight">Shelf</h1>
+          <h1 className="font-display text-[34px] font-semibold leading-none">Shelf</h1>
           <p className="mt-2 text-[15px] text-muted">
             Everything you've tried, ranked head-to-head within each category.
           </p>
@@ -222,51 +236,35 @@ export function Shelf() {
           {grouped.map((g) => (
             <div key={g.category} className="mb-5">
               <div className="flex items-baseline gap-2 pb-2">
-                <h2 className="text-[16px] font-bold tracking-tight">{categoryLabel(g.category)}</h2>
+                <h2 className="font-display text-[21px] font-semibold">{categoryLabel(g.category)}</h2>
                 <span className="num text-[12.5px] text-muted">
                   {g.items.length} ranked
                 </span>
               </div>
-              <motion.div variants={listContainer} initial="initial" animate="animate" className="flex flex-col gap-2">
-                <AnimatePresence initial={false}>
-                  {g.items.map((it) => {
-                    const p = getProduct(it.productId);
-                    if (!p) return null;
-                    return (
-                      <motion.button
-                        key={it.productId}
-                        layout
-                        type="button"
-                        variants={listItem}
-                        exit={{ opacity: 0, scale: 0.96 }}
-                        transition={spring}
-                        onClick={() => setDetailFor(it.productId)}
-                        className="flex items-center gap-3 overflow-hidden rounded-[20px] bg-surface p-3 pr-4 text-left shadow-card"
-                      >
-                        <span
-                          className="num w-7 shrink-0 text-center text-[17px] font-bold leading-none"
-                          style={{ color: tierVar(it.tier) }}
-                        >
-                          {it.groupRank}
-                        </span>
-                        <ProductImage id={p.id} brand={p.brand} name={p.name} size="sm" />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[15px] font-semibold leading-tight">
-                            {p.name}
-                          </div>
-                          <div className="truncate text-[12.5px] text-muted">
-                            {it.note ? it.note : p.brand}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <TierBadge tier={it.tier} size="sm" />
-                          <span className="num text-[11.5px] text-muted">${p.price}</span>
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.div>
+              <Reorder.Group
+                axis="y"
+                values={g.items.map((it) => it.productId)}
+                onReorder={(ids) => reorderCategory(g.category, ids)}
+                className="flex flex-col gap-2"
+              >
+                {g.items.map((it) => {
+                  const p = getProduct(it.productId);
+                  if (!p) return null;
+                  return (
+                    <ShelfRow
+                      key={it.productId}
+                      id={it.productId}
+                      groupRank={it.groupRank}
+                      tier={it.tier}
+                      name={p.name}
+                      brand={p.brand}
+                      note={it.note}
+                      price={p.price}
+                      onOpen={() => setDetailFor(it.productId)}
+                    />
+                  );
+                })}
+              </Reorder.Group>
             </div>
           ))}
         </div>
@@ -322,6 +320,65 @@ export function Shelf() {
         />
       )}
     </div>
+  );
+}
+
+function ShelfRow({
+  id,
+  groupRank,
+  tier,
+  name,
+  brand,
+  note,
+  price,
+  onOpen,
+}: {
+  id: string;
+  groupRank: number;
+  tier: Tier;
+  name: string;
+  brand: string;
+  note?: string;
+  price: number;
+  onOpen: () => void;
+}) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item
+      value={id}
+      dragListener={false}
+      dragControls={controls}
+      className="flex items-center gap-2 overflow-hidden rounded-[20px] bg-surface p-3 pr-4 shadow-card"
+    >
+      <span
+        onPointerDown={(e) => controls.start(e)}
+        className="-ml-1 shrink-0 cursor-grab touch-none p-1 text-muted/70 active:cursor-grabbing"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={18} />
+      </span>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <span
+          className="num w-6 shrink-0 text-center text-[17px] font-bold leading-none"
+          style={{ color: tierVar(tier) }}
+        >
+          {groupRank}
+        </span>
+        <ProductImage id={id} brand={brand} name={name} size="sm" />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[15px] font-semibold leading-tight">{name}</div>
+          <div className="truncate text-[12.5px] text-muted">{note ? note : brand}</div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <TierBadge tier={tier} size="sm" />
+          <span className="num text-[11.5px] text-muted">${price}</span>
+        </div>
+      </button>
+    </Reorder.Item>
   );
 }
 
@@ -488,11 +545,12 @@ function RankFlow({
   flow: Flow;
   onReaction: (r: Reaction) => void;
   onAnswer: (newWins: boolean) => void;
-  onFinish: (reason?: string) => void;
+  onFinish: (reason?: string, strength?: Strength) => void;
   onCancel: () => void;
 }) {
   const root = document.getElementById('stack-overlay');
   const [reason, setReason] = useState('');
+  const [strength, setStrength] = useState<Strength>('close');
   const p = getProduct(flow.productId);
   if (!root || !p) return null;
 
@@ -552,7 +610,7 @@ function RankFlow({
             <p className="mt-3 text-[13px] font-semibold uppercase tracking-[0.16em] text-muted">
               {p.name}
             </p>
-            <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-tight">
+            <h1 className="mt-2 font-display text-[31px] font-semibold leading-tight">
               First impression?
             </h1>
             <p className="mt-1 text-[14px] text-muted">
@@ -582,7 +640,7 @@ function RankFlow({
             <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-muted">
               Ranking {p.name}
             </p>
-            <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-tight">
+            <h1 className="mt-2 font-display text-[31px] font-semibold leading-tight">
               {preference ? 'Which one do you like more?' : 'Which did more for your skin?'}
             </h1>
           </div>
@@ -616,20 +674,55 @@ function RankFlow({
               {newRank}
             </div>
           )}
-          <h1 className="mt-3 text-[25px] font-bold leading-tight tracking-tight">
+          <h1 className="mt-3 font-display text-[30px] font-semibold leading-tight">
             {p.name} is your #{newRank} {catLabel.toLowerCase()}
           </h1>
           <p className="num mt-1 text-[15px] text-muted">
             #{newRank} of {total} {categoryPlural(p.category)} you’ve tried
           </p>
+
+          {/* Optional "how close?" — refines the gap to the item just above (barely-#2 vs runaway). */}
+          {newRank >= 2 && (
+            <div className="mt-5">
+              <p className="mb-2 text-[13px] font-medium text-muted">How close to your #{newRank - 1}?</p>
+              <div className="flex gap-2">
+                {(
+                  [
+                    { k: 'tied', l: 'Basically tied' },
+                    { k: 'close', l: 'A bit behind' },
+                    { k: 'step', l: 'Well behind' },
+                  ] as { k: Strength; l: string }[]
+                ).map((o) => (
+                  <button
+                    key={o.k}
+                    type="button"
+                    onClick={() => setStrength(o.k)}
+                    className={cn(
+                      'flex-1 rounded-full border px-2 py-2 text-[12.5px] font-semibold transition-colors',
+                      strength === o.k
+                        ? 'border-accent bg-accent/[0.06] text-accent-ink'
+                        : 'border-line text-muted',
+                    )}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={flow.wasRanked ? 'Why did it move? (optional)' : 'Add a note (optional)'}
             maxLength={90}
-            className="mt-6 w-full rounded-[16px] border border-line bg-surface px-4 py-3 text-[15px] outline-none placeholder:text-muted focus:border-ink/25"
+            className="mt-4 w-full rounded-[16px] border border-line bg-surface px-4 py-3 text-[15px] outline-none placeholder:text-muted focus:border-ink/25"
           />
-          <PillButton fullWidth className="mt-3" onClick={() => onFinish(reason)}>
+          <PillButton
+            fullWidth
+            className="mt-3"
+            onClick={() => onFinish(reason, newRank >= 2 ? strength : undefined)}
+          >
             Done
           </PillButton>
         </div>

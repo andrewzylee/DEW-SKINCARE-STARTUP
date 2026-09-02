@@ -20,6 +20,7 @@ export function Log({ go }: { go: (t: TabKey) => void }) {
     setUsedToday,
     setSkinRating,
     setTodayNote,
+    submitToday,
     isUsing,
   } = useStore();
   const [celebrate, setCelebrate] = useState(false);
@@ -42,14 +43,24 @@ export function Log({ go }: { go: (t: TabKey) => void }) {
   const pmProducts = stack.pm.map(getProduct).filter((p): p is Product => !!p && isUsing(p.id));
   const rating = todayLog?.skinRating ?? null;
 
+  const submitted = !!todayLog?.logged;
+
+  const pop = () => {
+    setCelebrate(true);
+    if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
+    celebrateTimer.current = window.setTimeout(() => setCelebrate(false), 700);
+  };
+
   const onRate = (v: number) => {
     const wasRated = rating !== null;
     setSkinRating(v);
-    if (!wasRated) {
-      setCelebrate(true);
-      if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current);
-      celebrateTimer.current = window.setTimeout(() => setCelebrate(false), 700);
-    }
+    if (!wasRated) pop();
+  };
+
+  const handleSubmit = () => {
+    if (rating === null) return;
+    submitToday();
+    pop();
   };
 
   return (
@@ -112,6 +123,29 @@ export function Log({ go }: { go: (t: TabKey) => void }) {
           maxLength={140}
           className="w-full rounded-[20px] border border-line bg-surface px-4 py-3.5 text-[15px] outline-none placeholder:text-muted focus:border-ink/25"
         />
+      </div>
+
+      {/* Submit — commit the check-in */}
+      <div className="px-5 pt-4">
+        {submitted ? (
+          <div className="flex items-center justify-center gap-2 rounded-[20px] bg-accent-soft px-4 py-4 text-[15px] font-semibold text-accent-ink">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-accent text-white">
+              <Check size={15} strokeWidth={3} />
+            </span>
+            Logged for today · {streak}-day streak
+          </div>
+        ) : (
+          <>
+            <PillButton fullWidth size="lg" disabled={rating === null} onClick={handleSubmit}>
+              Log today
+            </PillButton>
+            {rating === null && (
+              <p className="mt-2 text-center text-[12.5px] text-muted">
+                Rate how your skin feels above to log today.
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

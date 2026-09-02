@@ -125,7 +125,7 @@ export function Onboarding({ onComplete }: { onComplete?: () => void }) {
                   transition={gentle}
                   className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar px-5 pb-8 pt-6"
                 >
-                  <h1 className="text-[27px] font-bold leading-tight tracking-tight">
+                  <h1 className="font-display text-[32px] font-semibold leading-tight">
                     {current.prompt}
                   </h1>
                   {current.subtitle && (
@@ -210,7 +210,7 @@ function Intro({ onStart }: { onStart: () => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...spring, delay: 0.12 }}
-          className="text-[40px] font-bold leading-[1.05] tracking-tight"
+          className="font-display text-[46px] font-semibold leading-[1.02]"
         >
           {quizIntro.title}
         </motion.h1>
@@ -272,7 +272,7 @@ function InterestsStep({
         </button>
       </div>
       <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-8 pt-6">
-        <h1 className="text-[27px] font-bold leading-tight tracking-tight">What are you into?</h1>
+        <h1 className="font-display text-[32px] font-semibold leading-tight">What are you into?</h1>
         <p className="mt-2 text-[15px] text-muted">
           Pick anything — we’ll shape your app around it. No gender boxes here.
         </p>
@@ -372,7 +372,7 @@ function Reveal({
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...spring, delay: 0.05 }}
-          className="text-[34px] font-bold leading-tight tracking-tight"
+          className="font-display text-[40px] font-semibold leading-tight"
         >
           {reveal.title}
         </motion.h1>

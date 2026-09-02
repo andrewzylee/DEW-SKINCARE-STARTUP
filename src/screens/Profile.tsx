@@ -85,7 +85,7 @@ export function Profile({
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-6">
-        <h1 className="truncate text-[22px] font-bold tracking-tight">{acct.displayName}</h1>
+        <h1 className="truncate font-display text-[27px] font-semibold">{acct.displayName}</h1>
         <div className="flex items-center gap-3 text-muted">
           <button type="button" onClick={() => setSharing(true)} aria-label="Share profile">
             <Share2 size={20} />

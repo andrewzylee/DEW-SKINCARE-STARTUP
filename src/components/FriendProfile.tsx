@@ -75,7 +75,7 @@ export function FriendProfile({
             >
               <ArrowLeft size={20} />
             </button>
-            <h1 className="truncate text-[18px] font-bold tracking-tight">{person.name}</h1>
+            <h1 className="truncate font-display text-[23px] font-semibold">{person.name}</h1>
             <Share2 size={19} className="text-muted" />
           </div>
 

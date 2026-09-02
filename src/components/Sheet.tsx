@@ -44,7 +44,7 @@ export function Sheet({
           >
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-t-[28px] bg-surface/95 px-5 pb-3 pt-4 backdrop-blur">
               <div className="mx-auto h-1 w-9 rounded-full bg-line" style={{ position: 'absolute', left: 0, right: 0, top: 8 }} />
-              <h2 className="text-lg font-semibold">{title}</h2>
+              <h2 className="font-display text-[22px] font-semibold">{title}</h2>
               <button
                 type="button"
                 onClick={onClose}

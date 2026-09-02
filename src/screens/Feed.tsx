@@ -103,7 +103,7 @@ export function Feed({
     <div className="pb-8">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-6">
-        <span className="text-[24px] font-bold tracking-tight text-accent">dew</span>
+        <span className="font-display text-[26px] font-semibold tracking-tight text-ink">Dew</span>
         <div className="flex items-center gap-3 text-ink">
           <button type="button" onClick={onOpenCalendar} aria-label="Progress calendar">
             <Calendar size={20} className="text-muted" />

@@ -96,7 +96,7 @@ export function WrappedCard({ open, onClose }: { open: boolean; onClose: () => v
             </div>
 
             <div className="mt-5 text-center">
-              <div className="text-[16px] font-bold">dew</div>
+              <div className="font-display text-[20px] font-semibold">Dew</div>
               <p className="text-[11px] opacity-80">skinmaxx · your skin, sorted</p>
             </div>
           </div>

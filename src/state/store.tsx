@@ -13,7 +13,15 @@ import {
 import type { UserProfile } from '../data/quiz';
 import type { Comment } from '../data/social';
 import { getProduct, productDomain, type Category, type Domain } from '../data/mockCatalog';
-import { recomputeTiersGrouped, type Reaction, type Tier } from '../lib/ranking';
+import {
+  reactionCap,
+  recomputeTiersGrouped,
+  strengthGap,
+  tierForScore,
+  type Reaction,
+  type Strength,
+  type Tier,
+} from '../lib/ranking';
 import { shiftKey, todayKey } from '../lib/date';
 
 export interface StackState {
@@ -28,12 +36,14 @@ export interface LogEntry {
   usedPM: string[];
   skinRating: number | null; // 0..4 on a 5-point scale; null = not rated
   note?: string;
+  logged?: boolean; // the user tapped "Log today" to commit the check-in
 }
 
 export interface ShelfItem {
   productId: string;
   note?: string;
   reaction?: Reaction; // quick gut reaction captured when ranking
+  strength?: Strength; // "how close?" gap to the item ranked just above it
 }
 
 export interface RankedShelfItem extends ShelfItem {
@@ -195,6 +205,16 @@ function categoryRank(shelf: ShelfItem[], productId: string, category: Category)
 const categoryCount = (shelf: ShelfItem[], category: Category): number =>
   shelf.filter((it) => getProduct(it.productId)?.category === category).length;
 
+// A finished trial has a 1–10 verdict — map it to the same reaction scale so trial-ranked
+// products get a meaningful, absolute tier (not a neutral default).
+function reactionFromScore(overall: number): Reaction {
+  if (overall >= 9) return 'love';
+  if (overall >= 7) return 'like';
+  if (overall >= 5) return 'fine';
+  if (overall >= 3) return 'dislike';
+  return 'never';
+}
+
 function placeInCategory(
   shelf: ShelfItem[],
   productId: string,
@@ -202,6 +222,7 @@ function placeInCategory(
   localIndex: number,
   note?: string,
   reaction?: Reaction,
+  strength?: Strength,
 ): ShelfItem[] {
   const existing = shelf.find((it) => it.productId === productId);
   const without = shelf.filter((it) => it.productId !== productId);
@@ -209,6 +230,7 @@ function placeInCategory(
     productId,
     note: note ?? existing?.note,
     reaction: reaction ?? existing?.reaction,
+    strength: strength ?? existing?.strength,
   };
   const catIdx = without
     .map((it, i) => (getProduct(it.productId)?.category === category ? i : -1))
@@ -247,13 +269,15 @@ interface StoreValue {
   setUsedToday(period: 'am' | 'pm', ids: string[]): void;
   setSkinRating(rating: number): void;
   setTodayNote(note: string): void;
+  submitToday(): void;
 
   // shelf — ranking is per-category (localIndex is the position among same-category items)
   insertShelfInCategory(
     productId: string,
     localIndex: number,
-    meta?: { note?: string; reaction?: Reaction; reason?: string },
+    meta?: { note?: string; reaction?: Reaction; reason?: string; strength?: Strength },
   ): void;
+  reorderCategory(category: Category, orderedProductIds: string[]): void;
   removeFromShelf(productId: string): void;
   updateShelfNote(productId: string, note: string): void;
   isOnShelf(productId: string): boolean;
@@ -377,6 +401,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [today],
   );
 
+  // Commit today's check-in (the Log "Log today" submit). Everything already auto-saves; this
+  // marks it done so the screen can confirm it.
+  const submitToday = useCallback(() => {
+    setState((s) => {
+      const entry = ensureToday(s, today);
+      return { ...s, logs: { ...s.logs, [today]: { ...entry, logged: true } } };
+    });
+  }, [today]);
+
   // Set the whole used-list for a period at once (the Log "mark all / clear" affordance).
   const setUsedToday = useCallback(
     (period: 'am' | 'pm', ids: string[]) => {
@@ -393,7 +426,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (
       productId: string,
       localIndex: number,
-      meta?: { note?: string; reaction?: Reaction; reason?: string },
+      meta?: { note?: string; reaction?: Reaction; reason?: string; strength?: Strength },
     ) => {
       const p = getProduct(productId);
       if (!p) return;
@@ -406,6 +439,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localIndex,
           meta?.note,
           meta?.reaction,
+          meta?.strength,
         );
         const to = categoryRank(shelf, productId, p.category) ?? 1;
         if (from === to) return { ...s, shelf }; // no positional change → no feed event
@@ -422,6 +456,54 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ts: Date.now(),
         };
         return { ...s, shelf, rankEvents: [event, ...s.rankEvents].slice(0, 60) };
+      });
+    },
+    [today],
+  );
+
+  // Manual drag-reorder within a category — the user's list is the source of truth. Rebuilds the
+  // shelf with that category's items in the new order (preserving each item's note/reaction/
+  // strength) and logs a move for the biggest change.
+  const reorderCategory = useCallback(
+    (category: Category, orderedProductIds: string[]) => {
+      setState((s) => {
+        const catIds = s.shelf
+          .filter((it) => getProduct(it.productId)?.category === category)
+          .map((it) => it.productId);
+        const byId = new Map(s.shelf.map((it) => [it.productId, it] as const));
+        const queue = [...orderedProductIds];
+        const shelf = s.shelf.map((it) =>
+          getProduct(it.productId)?.category === category
+            ? byId.get(queue.shift() as string) ?? it
+            : it,
+        );
+        let moved: string | null = null;
+        let bestDelta = 0;
+        orderedProductIds.forEach((id, idx) => {
+          const fr = catIds.indexOf(id);
+          if (fr < 0) return;
+          const delta = fr - idx;
+          if (Math.abs(delta) > Math.abs(bestDelta)) {
+            bestDelta = delta;
+            moved = id;
+          }
+        });
+        let rankEvents = s.rankEvents;
+        if (moved && bestDelta !== 0) {
+          const event: RankEvent = {
+            id: `re-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            productId: moved,
+            category,
+            fromRank: catIds.indexOf(moved) + 1,
+            toRank: orderedProductIds.indexOf(moved) + 1,
+            groupSize: orderedProductIds.length,
+            reason: 'Reordered by hand',
+            date: today,
+            ts: Date.now(),
+          };
+          rankEvents = [event, ...s.rankEvents].slice(0, 60);
+        }
+        return { ...s, shelf, rankEvents };
       });
     },
     [today],
@@ -491,7 +573,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ).length;
           const localIdx = Math.round((1 - verdict.overall / 10) * catCount);
           const note = `Trial: ${verdict.overall}/10${verdict.repurchase ? ' · would repurchase' : ''}`;
-          shelf = placeInCategory(s.shelf, trial.productId, p.category, localIdx, note);
+          shelf = placeInCategory(
+            s.shelf,
+            trial.productId,
+            p.category,
+            localIdx,
+            note,
+            reactionFromScore(verdict.overall),
+          );
           const to = categoryRank(shelf, trial.productId, p.category) ?? 1;
           if (from !== to) {
             const event: RankEvent = {
@@ -562,7 +651,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return p ? { ...it, category: p.category, domain: productDomain(p) } : null;
       })
       .filter((x): x is ShelfItem & { category: Category; domain: Domain } => x !== null);
-    return recomputeTiersGrouped(withMeta, (it) => it.category);
+    const ranked = recomputeTiersGrouped(withMeta, (it) => it.category);
+    // Absolute reaction ceiling + a strength-driven gap below the item above. #1 of a category
+    // scores its cap; each next item = min(its own cap, prevScore − strengthGap). Items arrive in
+    // ascending groupRank per category, so this walks each category top → bottom.
+    const prevScore = new Map<Category, number>();
+    return ranked.map((it) => {
+      const cap = reactionCap(it.reaction);
+      const prev = prevScore.get(it.category);
+      const raw = prev === undefined ? cap : Math.min(cap, prev - strengthGap(it.strength));
+      const score = Math.max(20, Math.min(99, Math.round(raw)));
+      prevScore.set(it.category, score);
+      return { ...it, tier: tierForScore(score) };
+    });
   }, [state.shelf]);
   const todayLog = state.logs[today];
 
@@ -585,7 +686,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setUsedToday,
     setSkinRating,
     setTodayNote,
+    submitToday,
     insertShelfInCategory,
+    reorderCategory,
     removeFromShelf,
     updateShelfNote,
     isOnShelf,

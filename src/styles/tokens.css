@@ -1,33 +1,32 @@
-/* STACK design tokens — clean light theme (Beli-leaning: bright, cool-neutral, crisp).
-   Values are space-separated RGB channels so Tailwind can inject alpha
-   (rgb(var(--x) / <alpha-value>)), making opacity utilities like bg-ink/10 work.
-   Hex equivalents are noted for reference. */
+/* DEW design tokens — "Dewdrop Sage": premium, soft, skincare-calm. Warm cream canvas, muted
+   sage-moss accent, muted charcoal ink, elegant serif display. Values are space-separated RGB
+   channels so Tailwind can inject alpha (rgb(var(--x) / <alpha-value>)); hex noted for reference. */
 :root {
-  --bg: 246 247 248; /* #f6f7f8 — clean cool canvas */
-  --surface: 255 255 255; /* #ffffff — cards */
-  --ink: 15 17 21; /* #0f1115 — near-black, faintly cool */
-  --muted: 138 143 153; /* #8a8f99 — cool gray secondary text */
-  --line: 236 236 240; /* #ececf0 — light hairline borders */
+  --bg: 247 246 242; /* #F7F6F2 — warm cream canvas */
+  --surface: 255 255 255; /* #ffffff — soft-white cards on cream */
+  --ink: 46 46 46; /* #2E2E2E — muted charcoal (not harsh black) */
+  --muted: 140 145 132; /* #8C9184 — soft sage-gray secondary text */
+  --line: 233 231 223; /* #E9E7DF — warm hairline borders */
 
-  --accent: 12 143 98; /* #0c8f62 — clean deep emerald, primary actions */
-  --accent-ink: 10 122 82; /* #0a7a52 — green text on light */
-  --accent-soft: 231 244 238; /* #e7f4ee — faint emerald tint for fills/pills */
-  --accent-bright: 23 200 139; /* #17c88b — mint pop: streak, highlights */
+  --accent: 110 125 95; /* #6E7D5F — deep moss, primary actions (white text ok) */
+  --accent-ink: 85 99 74; /* #55634A — moss text on light */
+  --accent-soft: 231 239 230; /* #E7EFE6 — pale sage, tints / pills */
+  --accent-bright: 168 184 156; /* #A8B89C — soft moss, gentle highlights */
 
-  /* domain identity — skincare rides the emerald accent; makeup gets a warm coral so the
-     two co-equal domains read distinct without going pink-girly (co-ed by design). */
-  --skin: 12 143 98; /* = accent (emerald) */
-  --skin-soft: 231 244 238;
-  --makeup: 230 106 74; /* #e66a4a — warm coral */
-  --makeup-ink: 197 78 50; /* #c54e32 — coral text on light */
-  --makeup-soft: 252 235 229; /* #fcebe5 — faint coral tint for fills/pills */
+  /* domain identity — skincare rides the moss accent; makeup gets a warm clay so the two
+     co-equal domains read distinct while staying in the calm sage-cream world. */
+  --skin: 110 125 95; /* = accent (moss) */
+  --skin-soft: 231 239 230;
+  --makeup: 194 124 96; /* #C27C60 — muted terracotta / clay */
+  --makeup-ink: 166 98 72; /* #A66248 — clay text on light */
+  --makeup-soft: 244 233 226; /* #F4E9E2 — faint warm-blush tint */
 
-  /* tier colors — desaturated, tasteful, cool-clean */
-  --tier-s: 215 161 58; /* #d7a13a — refined gold */
-  --tier-a: 23 181 127; /* #17b57f — green */
-  --tier-b: 75 131 240; /* #4b83f0 — blue */
-  --tier-c: 154 160 169; /* #9aa0a9 — cool gray */
-  --tier-f: 236 106 90; /* #ec6a5a — clean coral */
+  /* tier colors — muted & harmonized with the sage-cream palette */
+  --tier-s: 193 160 92; /* #C1A05C — soft ochre gold */
+  --tier-a: 126 154 110; /* #7E9A6E — sage green */
+  --tier-b: 124 147 176; /* #7C93B0 — muted slate blue */
+  --tier-c: 168 169 158; /* #A8A99E — warm gray */
+  --tier-f: 194 123 99; /* #C27B63 — muted terracotta */
 
   --app-max: 430px;
 }

@@ -68,7 +68,9 @@ export function ShadeMatchView({
             <div className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
               <Sparkles size={12} /> The wedge
             </div>
-            <h1 className="mt-3 text-[26px] font-bold leading-tight text-white">Shade Match</h1>
+            <h1 className="mt-3 font-display text-[31px] font-semibold leading-tight text-white">
+              Shade Match
+            </h1>
             <p className="mt-1 text-[14px] font-medium text-white/85">
               Color that actually suits your skin — foundation, concealer, blush & lip.
             </p>

@@ -69,7 +69,9 @@ export function FeaturedListView({
                 />
               ))}
             </div>
-            <h1 className="mt-4 text-[26px] font-bold leading-tight text-white">{list.title}</h1>
+            <h1 className="mt-4 font-display text-[31px] font-semibold leading-tight text-white">
+              {list.title}
+            </h1>
             <p className="mt-1 text-[14px] font-medium text-white/85">{list.subtitle}</p>
             <div className="mt-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1 backdrop-blur">
               <span className="num text-[12.5px] font-semibold text-white">

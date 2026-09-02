@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Flame, Info, RotateCcw, Settings2, Shuffle } from 'lucide-react';
 import { catalog, getProduct, type Product, type SkinType } from '../data/mockCatalog';
 import { useStore } from '../state/store';
-import { greeting } from '../lib/date';
 import { cn } from '../lib/cn';
 import { listContainer, listItem, spring } from '../lib/motion';
 import { Chip } from '../components/Chip';
@@ -38,8 +37,7 @@ export function Stack() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-5 pb-1 pt-6">
         <div className="min-w-0">
-          <p className="text-sm text-muted">{greeting()}</p>
-          <h1 className="mt-0.5 text-[28px] font-bold leading-none tracking-tight">Your Routine</h1>
+          <h1 className="font-display text-[34px] font-semibold leading-none">Your Routine</h1>
           <div className="mt-3 flex items-center gap-2">
             <Chip>{SKIN_LABEL[profile.skinType]} skin</Chip>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1.5 text-[13px] shadow-card">

@@ -17,6 +17,44 @@ export function tierForPercentile(pct: number): Tier {
   return 'F';
 }
 
+// ---- Reaction-anchored ABSOLUTE tiers (the real ranking quality signal) ----
+// Pure percentile made the #1 of every (often tiny) category an automatic S, so a single "meh"
+// product read as elite. Instead we anchor an absolute 0–100 score to your gut reaction, then
+// nudge by position within the category. S is EARNED — you have to love it — not handed to
+// whatever happens to sit on top of a short list. Tiers stay meaningful even at one product.
+// Optional "how close?" magnitude captured at final placement — the gap to the item just above.
+export type Strength = 'tied' | 'close' | 'step';
+
+// Absolute ceiling for a product's score from its gut reaction: the tier can't exceed this, so a
+// "fine" product never reads S no matter where it sits. #1 of a category scores exactly its cap.
+const REACTION_CAP: Record<Reaction, number> = {
+  love: 92,
+  like: 82,
+  fine: 65,
+  dislike: 55,
+  never: 45,
+};
+const NEUTRAL_CAP = 73; // no reaction captured (older / imported items)
+export function reactionCap(reaction?: Reaction): number {
+  return reaction ? REACTION_CAP[reaction] : NEUTRAL_CAP;
+}
+
+// How far a product sits below the one ranked just above it — the strength tap. "Basically tied"
+// barely drops (same tier likely); a "clear step down" can push it a tier lower.
+const STRENGTH_GAP: Record<Strength, number> = { tied: 1, close: 5, step: 11 };
+export function strengthGap(strength?: Strength): number {
+  return STRENGTH_GAP[strength ?? 'close'];
+}
+
+// Absolute tier thresholds — S is rare and earned, F is a regret buy.
+export function tierForScore(score: number): Tier {
+  if (score >= 90) return 'S';
+  if (score >= 79) return 'A';
+  if (score >= 66) return 'B';
+  if (score >= 52) return 'C';
+  return 'F';
+}
+
 // Assign 1-based rank + tier to an ordered shelf (index 0 = top / best).
 export function recomputeTiers<T extends object>(
   shelf: T[],

@@ -32,6 +32,8 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Elegant high-contrast serif for the wordmark + display titles (premium skincare feel).
+        display: ['"Cormorant Garamond"', 'ui-serif', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {
@@ -39,9 +41,9 @@ export default {
         xl2: '20px',
       },
       boxShadow: {
-        // clean, cool, low-opacity — cards read as lifted, not boxed
-        card: '0 1px 2px rgba(16, 18, 24, 0.04), 0 6px 20px -10px rgba(16, 18, 24, 0.10)',
-        pop: '0 10px 34px -8px rgba(16, 18, 24, 0.16)',
+        // soft, warm, airy — cards read as gently lifted, not boxed (premium calm)
+        card: '0 1px 2px rgba(46, 46, 46, 0.03), 0 10px 30px -14px rgba(46, 46, 46, 0.12)',
+        pop: '0 18px 44px -14px rgba(46, 46, 46, 0.18)',
         tab: '0 -1px 0 0 rgb(var(--line))',
       },
       maxWidth: {

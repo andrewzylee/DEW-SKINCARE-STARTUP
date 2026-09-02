@@ -46,6 +46,38 @@ export function monthCells(year: number, month: number): MonthCell[] {
   return cells;
 }
 
+// Skin score (0–100) from a set of 0–4 daily ratings — the home "Your skin score" number.
+export function skinScore(ratings: number[]): number | null {
+  if (!ratings.length) return null;
+  const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length; // 0..4
+  return Math.round(50 + (avg / 4) * 45); // 50..95 band
+}
+
+export interface WeeklyScore {
+  score: number | null;
+  label: string;
+  delta: number | null; // vs last week
+}
+
+export function weeklyScore(logs: Record<string, LogEntry>, today: string): WeeklyScore {
+  const ratingsFor = (keys: string[]) =>
+    keys.map((k) => logs[k]).filter(isLogged).map((e) => e!.skinRating as number);
+  const score = skinScore(ratingsFor(weekKeys(today)));
+  const last = skinScore(ratingsFor(weekKeys(shiftKey(today, -7))));
+  const delta = score != null && last != null ? score - last : null;
+  const label =
+    score == null
+      ? 'Log to see'
+      : score >= 85
+        ? 'Great'
+        : score >= 72
+          ? 'Good'
+          : score >= 60
+            ? 'Okay'
+            : 'Needs care';
+  return { score, label, delta };
+}
+
 const MILESTONES = [3, 7, 14, 30, 60, 100, 200, 365];
 
 /** Next streak milestone above the current streak, or null once past the top. */

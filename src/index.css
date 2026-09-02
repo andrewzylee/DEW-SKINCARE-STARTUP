@@ -27,11 +27,10 @@
     overscroll-behavior-y: none;
   }
 
-  /* All numerals read as intentional / technical (§6): mono + tabular. */
+  /* Numerals stay aligned (tabular) but read clean & premium — no techy mono. */
   .num {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
 
   h1,
@@ -39,6 +38,12 @@
   h3 {
     letter-spacing: -0.02em;
     text-wrap: balance;
+  }
+
+  /* Elegant serif for the wordmark + display titles — wants relaxed, near-neutral tracking. */
+  .font-display {
+    letter-spacing: 0.004em;
+    font-feature-settings: 'liga', 'dlig';
   }
 
   button {
