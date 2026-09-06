@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Search,
   Send,
+  SlidersHorizontal,
   Sparkles,
   TrendingUp,
   Users,
@@ -60,7 +61,7 @@ export function Feed({
   onOpenMenu: () => void;
 }) {
   const { state, rankedShelf } = useStore();
-  const { openProduct, openFriend, openShade } = useUI();
+  const { openProduct, openFriend, openShade, openBrowse } = useUI();
   const [view, setView] = useState<View>('foryou');
   const [q, setQ] = useState('');
 
@@ -81,10 +82,13 @@ export function Feed({
   }, [state.using, state.shelf]);
 
   const results = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return [];
+    const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return [];
     return catalog
-      .filter((p) => p.name.toLowerCase().includes(term) || p.brand.toLowerCase().includes(term))
+      .filter((p) => {
+        const hay = `${p.name} ${p.brand} ${p.category}`.toLowerCase();
+        return terms.every((t) => hay.includes(t));
+      })
       .slice(0, 12);
   }, [q]);
 
@@ -132,6 +136,22 @@ export function Feed({
           />
         </div>
       </div>
+
+      {!q.trim() && (
+        <div className="px-5 pt-2">
+          <button
+            type="button"
+            onClick={openBrowse}
+            className="flex w-full items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-[13.5px] font-semibold text-ink transition-transform active:scale-[0.99]"
+          >
+            <SlidersHorizontal size={15} className="text-accent" />
+            Browse all products
+            <span className="num ml-auto text-[12px] font-normal text-muted">
+              filters · brands · price
+            </span>
+          </button>
+        </div>
+      )}
 
       {q.trim() ? (
         <SearchResults results={results} owned={owned} />

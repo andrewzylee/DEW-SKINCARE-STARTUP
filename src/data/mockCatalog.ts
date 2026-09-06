@@ -4,6 +4,11 @@
 // slots, so any skinType x goal x budget resolves to a sensible routine) and makeup
 // (Gen-Z favorites people actually rank — lip, blush, foundation, concealer, mascara…).
 
+import { importedMakeup } from './makeupImport.generated';
+import { prestigeSkincare } from './prestigeSkincare';
+import { midrangeSkincare } from './midrangeSkincare';
+import { moreFragrance, indieMakeup } from './catalogExtras';
+
 export type SkinType = 'oily' | 'combination' | 'dry' | 'sensitive';
 // Shade phenotype — powers Shade Match (the acquisition wedge) and "people with your skin".
 export type Tone = 'fair' | 'light' | 'medium' | 'tan' | 'deep';
@@ -16,10 +21,14 @@ export type MakeupCategory =
   | 'foundation'
   | 'concealer'
   | 'blush'
+  | 'bronzer'
   | 'lip'
+  | 'eyeshadow'
+  | 'eyeliner'
   | 'mascara'
   | 'brow'
-  | 'setting';
+  | 'setting'
+  | 'nail';
 // Fragrance is one rankable category (you rank all your scents against each other, Beli-style).
 export type FragranceCategory = 'fragrance';
 export type Category = SkincareCategory | MakeupCategory | FragranceCategory;
@@ -66,7 +75,7 @@ export interface Product {
 
 const url = (id: string) => `https://example.com/p/${id}`; // restock stub
 
-export const catalog: Product[] = [
+const seedCatalog: Product[] = [
   // ---------- CLEANSERS ----------
   {
     id: 'cerave-foaming-cleanser',
@@ -1089,6 +1098,17 @@ export const catalog: Product[] = [
   },
 ];
 
+// Merge the hand-curated seed with the imported real makeup catalog. Imports are appended so
+// curated products keep their positions (and keep driving Featured Lists / Taste / Shade Match).
+export const catalog: Product[] = [
+  ...seedCatalog,
+  ...importedMakeup,
+  ...prestigeSkincare,
+  ...midrangeSkincare,
+  ...moreFragrance,
+  ...indieMakeup,
+];
+
 // ---------- LOOKALIKE COHORT STATS (mock social proof for Discover) ----------
 export interface LookalikeStat {
   productId: string;
@@ -1128,10 +1148,14 @@ export const MAKEUP_CATEGORIES: MakeupCategory[] = [
   'foundation',
   'concealer',
   'blush',
+  'bronzer',
   'lip',
+  'eyeshadow',
+  'eyeliner',
   'mascara',
   'brow',
   'setting',
+  'nail',
 ];
 export const FRAGRANCE_CATEGORIES: FragranceCategory[] = ['fragrance'];
 const MAKEUP_SET = new Set<Category>(MAKEUP_CATEGORIES);

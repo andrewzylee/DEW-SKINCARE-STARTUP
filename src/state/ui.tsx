@@ -6,6 +6,7 @@ import { PostDetail } from '../components/PostDetail';
 import { FeaturedListView } from '../components/FeaturedListView';
 import { ShadeMatchView } from '../components/ShadeMatchView';
 import { ShadeFinderView } from '../components/ShadeFinderView';
+import { BrowseView } from '../components/BrowseView';
 import { WrappedCard } from '../screens/WrappedCard';
 import type { ActivityPost } from '../lib/activity';
 
@@ -21,6 +22,7 @@ interface UIValue {
   openList(listId: string): void;
   openShade(): void;
   openShadeFinder(): void;
+  openBrowse(): void;
   openWrapped(): void;
 }
 
@@ -34,6 +36,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [listId, setListId] = useState<string | null>(null);
   const [shadeOpen, setShadeOpen] = useState(false);
   const [shadeFinderOpen, setShadeFinderOpen] = useState(false);
+  const [browseOpen, setBrowseOpen] = useState(false);
   const [wrapped, setWrapped] = useState(false);
 
   const openProduct = useCallback((id: string) => {
@@ -91,11 +94,20 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setListId(null);
     setShadeFinderOpen(true);
   }, []);
+  // Browse (the full catalog with filters) sits behind the Product sheet, like the shade views.
+  const openBrowse = useCallback(() => {
+    setProductId(null);
+    setTrialId(null);
+    setPost(null);
+    setFriendId(null);
+    setListId(null);
+    setBrowseOpen(true);
+  }, []);
   const openWrapped = useCallback(() => setWrapped(true), []);
 
   return (
     <UIContext.Provider
-      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openWrapped }}
+      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openBrowse, openWrapped }}
     >
       {children}
       <FeaturedListView listId={listId} onClose={() => setListId(null)} onOpenProduct={openProduct} />
@@ -108,6 +120,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
       <ShadeFinderView
         open={shadeFinderOpen}
         onClose={() => setShadeFinderOpen(false)}
+        onOpenProduct={openProduct}
+      />
+      <BrowseView
+        open={browseOpen}
+        onClose={() => setBrowseOpen(false)}
         onOpenProduct={openProduct}
       />
       <ProductSheet productId={productId} onClose={() => setProductId(null)} onOpenTrial={openTrial} />

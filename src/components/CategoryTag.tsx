@@ -9,10 +9,14 @@ const LABEL: Record<Category, string> = {
   foundation: 'Foundation',
   concealer: 'Concealer',
   blush: 'Blush',
+  bronzer: 'Bronzer',
   lip: 'Lip',
+  eyeshadow: 'Eyeshadow',
+  eyeliner: 'Eyeliner',
   mascara: 'Mascara',
   brow: 'Brow',
   setting: 'Setting',
+  nail: 'Nail',
   fragrance: 'Fragrance',
 };
 
@@ -26,10 +30,14 @@ const PLURAL: Record<Category, string> = {
   foundation: 'foundations',
   concealer: 'concealers',
   blush: 'blushes',
+  bronzer: 'bronzers',
   lip: 'lip products',
+  eyeshadow: 'eyeshadows',
+  eyeliner: 'eyeliners',
   mascara: 'mascaras',
   brow: 'brow products',
   setting: 'setting products',
+  nail: 'nail polishes',
   fragrance: 'fragrances',
 };
 export const categoryPlural = (c: Category) => PLURAL[c];
