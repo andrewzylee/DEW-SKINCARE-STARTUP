@@ -5,6 +5,7 @@ import { FriendProfile } from '../components/FriendProfile';
 import { PostDetail } from '../components/PostDetail';
 import { FeaturedListView } from '../components/FeaturedListView';
 import { ShadeMatchView } from '../components/ShadeMatchView';
+import { ShadeFinderView } from '../components/ShadeFinderView';
 import { WrappedCard } from '../screens/WrappedCard';
 import type { ActivityPost } from '../lib/activity';
 
@@ -19,6 +20,7 @@ interface UIValue {
   openFriend(personId: string): void;
   openList(listId: string): void;
   openShade(): void;
+  openShadeFinder(): void;
   openWrapped(): void;
 }
 
@@ -31,6 +33,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [post, setPost] = useState<ActivityPost | null>(null);
   const [listId, setListId] = useState<string | null>(null);
   const [shadeOpen, setShadeOpen] = useState(false);
+  const [shadeFinderOpen, setShadeFinderOpen] = useState(false);
   const [wrapped, setWrapped] = useState(false);
 
   const openProduct = useCallback((id: string) => {
@@ -79,11 +82,20 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setListId(null);
     setShadeOpen(true);
   }, []);
+  // Shade Finder (cross-brand translator) sits behind the Product sheet, like Shade Match.
+  const openShadeFinder = useCallback(() => {
+    setProductId(null);
+    setTrialId(null);
+    setPost(null);
+    setFriendId(null);
+    setListId(null);
+    setShadeFinderOpen(true);
+  }, []);
   const openWrapped = useCallback(() => setWrapped(true), []);
 
   return (
     <UIContext.Provider
-      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openWrapped }}
+      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openWrapped }}
     >
       {children}
       <FeaturedListView listId={listId} onClose={() => setListId(null)} onOpenProduct={openProduct} />
@@ -92,6 +104,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
         onClose={() => setShadeOpen(false)}
         onOpenProduct={openProduct}
         onOpenFriend={openFriend}
+      />
+      <ShadeFinderView
+        open={shadeFinderOpen}
+        onClose={() => setShadeFinderOpen(false)}
+        onOpenProduct={openProduct}
       />
       <ProductSheet productId={productId} onClose={() => setProductId(null)} onOpenTrial={openTrial} />
       <TrialDetail trialId={trialId} onClose={() => setTrialId(null)} />

@@ -4,6 +4,7 @@ import {
   FlaskConical,
   Camera,
   ChevronRight,
+  Droplet,
   Heart,
   Instagram,
   Layers,
@@ -21,6 +22,7 @@ import { getProduct } from '../data/mockCatalog';
 import { downscaleToDataUrl } from '../lib/image';
 import { deriveMyPosts, type ActivityPost } from '../lib/activity';
 import { archetypeOf, tasteItemsFromRanked } from '../lib/taste';
+import { TONE_LABEL, UNDERTONE_LABEL } from '../lib/shadeMatch';
 import { tierVar, type Tier } from '../lib/ranking';
 import { cn } from '../lib/cn';
 import { useUI } from '../state/ui';
@@ -40,7 +42,7 @@ export function Profile({
   onOpenCalendar: () => void;
 }) {
   const { state, streak, rankedShelf, updateAccount, today } = useStore();
-  const { openPost, openFriend, openWrapped, openProduct } = useUI();
+  const { openPost, openFriend, openWrapped, openProduct, openShadeFinder } = useUI();
   const acct = state.account;
   const fileRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
@@ -67,6 +69,19 @@ export function Profile({
   const profileInterests = state.profile?.interests ?? ['skincare', 'makeup'];
   const showFragrance = profileInterests.includes('fragrance') || fragranceRanked > 0;
   const fragranceShelf = rankedShelf.filter((r) => r.domain === 'fragrance');
+
+  // Skin profile — the facts that power Shade Match & Shade Finder.
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const skinType = state.profile?.skinType;
+  const tone = state.profile?.tone;
+  const undertone = state.profile?.undertone;
+  const shadeCount = state.profile?.shades?.length ?? 0;
+  const skinBits = [
+    skinType ? `${cap(skinType)} skin` : null,
+    tone ? TONE_LABEL[tone] : null,
+    undertone ? UNDERTONE_LABEL[undertone] : null,
+  ].filter(Boolean) as string[];
+  const skinLine = skinBits.length ? skinBits.join(' · ') : 'Set your tone & undertone';
 
   const onPickFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,6 +193,31 @@ export function Profile({
               {skincareRanked} skin
             </span>
           </div>
+        </button>
+      </div>
+
+      {/* Skin profile — tone, undertone & self-logged shade matches (opens Shade Finder) */}
+      <div className="mt-3 px-5">
+        <button
+          type="button"
+          onClick={openShadeFinder}
+          className="flex w-full items-center gap-3 rounded-card bg-surface p-4 text-left shadow-card transition-transform active:scale-[0.99]"
+        >
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-makeup-soft">
+            <Droplet size={19} className="text-makeup-ink" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+              Skin profile
+            </div>
+            <div className="truncate text-[15px] font-semibold leading-tight">{skinLine}</div>
+            <div className="mt-0.5 text-[12.5px] text-muted">
+              {shadeCount > 0
+                ? `${shadeCount} shade${shadeCount === 1 ? '' : 's'} logged · foundation & concealer`
+                : 'Find your foundation & concealer match'}
+            </div>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-muted" />
         </button>
       </div>
 

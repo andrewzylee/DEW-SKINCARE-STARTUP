@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Flame, Info, RotateCcw, Settings2, Shuffle } from 'lucide-react';
-import { catalog, getProduct, type Product, type SkinType } from '../data/mockCatalog';
+import { Flame, Info, Plus, RotateCcw, Settings2, Shuffle, Trash2 } from 'lucide-react';
+import { catalog, getProduct, productDomain, type Product, type SkinType } from '../data/mockCatalog';
 import { useStore } from '../state/store';
 import { cn } from '../lib/cn';
 import { listContainer, listItem, spring } from '../lib/motion';
@@ -20,10 +20,13 @@ const SKIN_LABEL: Record<string, string> = {
 };
 
 export function Stack() {
-  const { state, streak, isUsing, toggleUsing, swapProduct, resetAll } = useStore();
+  const { state, streak, isUsing, toggleUsing, swapProduct, addToRoutine, removeFromRoutine, resetAll } =
+    useStore();
   const [period, setPeriod] = useState<'am' | 'pm'>('am');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [swapFor, setSwapFor] = useState<Product | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const periodLabel = period === 'am' ? 'morning' : 'night';
 
   const profile = state.profile;
   const stack = state.stack;
@@ -108,18 +111,40 @@ export function Stack() {
 
                 <div className="mt-3 flex items-center justify-between border-t border-line pt-2.5">
                   <UsingSwitch on={using} onToggle={() => toggleUsing(p.id)} />
-                  <button
-                    type="button"
-                    onClick={() => setSwapFor(p)}
-                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-medium text-muted hover:bg-ink/[0.04] hover:text-ink"
-                  >
-                    <Shuffle size={14} />
-                    Swap
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setSwapFor(p)}
+                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-medium text-muted hover:bg-ink/[0.04] hover:text-ink"
+                    >
+                      <Shuffle size={14} />
+                      Swap
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeFromRoutine(period, p.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-medium text-muted hover:bg-tier-f/10 hover:text-tier-f"
+                      aria-label={`Remove ${p.name} from ${periodLabel} routine`}
+                    >
+                      <Trash2 size={14} />
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             );
           })}
+
+          <motion.button
+            variants={listItem}
+            transition={spring}
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-card border border-dashed border-line bg-surface/60 py-3.5 text-[14px] font-semibold text-muted transition-colors hover:border-accent hover:text-accent active:scale-[0.99]"
+          >
+            <Plus size={17} />
+            Add a product to {periodLabel}
+          </motion.button>
 
           {stack.notes.length > 0 && (
             <motion.div variants={listItem} transition={spring} className="mt-1 flex flex-col gap-2">
@@ -150,6 +175,23 @@ export function Stack() {
             }}
           />
         )}
+      </Sheet>
+
+      {/* Add-product sheet */}
+      <Sheet
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        title={`Add to ${periodLabel}`}
+      >
+        <AddList
+          period={period}
+          skinType={profile.skinType}
+          existingIds={ids}
+          onAdd={(p) => {
+            addToRoutine(period, p.id);
+            setAddOpen(false);
+          }}
+        />
       </Sheet>
 
       {/* Settings sheet */}
@@ -231,6 +273,78 @@ function SwapList({
       ))}
       {alternates.length === 0 && (
         <p className="py-6 text-center text-sm text-muted">No alternates in this category.</p>
+      )}
+    </div>
+  );
+}
+
+function AddList({
+  period,
+  skinType,
+  existingIds,
+  onAdd,
+}: {
+  period: 'am' | 'pm';
+  skinType: SkinType;
+  existingIds: string[];
+  onAdd: (p: Product) => void;
+}) {
+  const [q, setQ] = useState('');
+  const options = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return catalog
+      .filter((p) => productDomain(p) === 'skincare' && !existingIds.includes(p.id))
+      .filter(
+        (p) =>
+          !query ||
+          p.name.toLowerCase().includes(query) ||
+          p.brand.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query),
+      )
+      .sort((a, b) => {
+        // Products suited to your skin type first, then group by category, then cheapest.
+        const aFit = a.skinTypes.includes(skinType) ? 0 : 1;
+        const bFit = b.skinTypes.includes(skinType) ? 0 : 1;
+        if (aFit !== bFit) return aFit - bFit;
+        if (a.category !== b.category) return a.category.localeCompare(b.category);
+        return a.price - b.price;
+      });
+  }, [q, existingIds, skinType]);
+
+  return (
+    <div className="flex flex-col gap-2 pb-2">
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search products, brands, categories"
+        className="w-full rounded-[14px] border border-line bg-bg px-4 py-3 text-[15px] outline-none focus:border-ink/25"
+      />
+      <p className="px-0.5 pb-1 text-[12.5px] text-muted">
+        Picks for your {SKIN_LABEL[skinType]?.toLowerCase() ?? skinType} skin come first — it lands in
+        your {period === 'am' ? 'morning' : 'night'} routine.
+      </p>
+      {options.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          onClick={() => onAdd(p)}
+          className="flex items-center gap-3 rounded-[18px] bg-surface p-2.5 text-left shadow-card transition-transform active:scale-[0.99]"
+        >
+          <ProductImage id={p.id} brand={p.brand} name={p.name} size="md" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[15px] font-semibold leading-tight">{p.name}</div>
+            <div className="truncate text-[13px] text-muted">{p.brand}</div>
+            <div className="mt-1">
+              <CategoryTag category={p.category} />
+            </div>
+          </div>
+          <span className="num shrink-0 text-[14px] font-semibold">${p.price}</span>
+        </button>
+      ))}
+      {options.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted">
+          {q ? 'No products match your search.' : "Everything's already in this routine."}
+        </p>
       )}
     </div>
   );

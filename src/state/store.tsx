@@ -262,6 +262,8 @@ interface StoreValue {
   isUsing(productId: string): boolean;
   toggleUsing(productId: string): void;
   swapProduct(oldId: string, newId: string): void;
+  addToRoutine(period: 'am' | 'pm', productId: string): void;
+  removeFromRoutine(period: 'am' | 'pm', productId: string): void;
 
   // log
   getLog(dateKey: string): LogEntry | undefined;
@@ -360,6 +362,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         s.using.map((x) => (x === oldId ? newId : x)),
       ).filter((x) => am.includes(x) || pm.includes(x) || x === newId);
       return { ...s, stack: { ...s.stack, am, pm }, using };
+    });
+  }, []);
+
+  // Add a product to a routine period (AM or PM) and mark it in-use. No-op if already there.
+  const addToRoutine = useCallback((period: 'am' | 'pm', productId: string) => {
+    setState((s) => {
+      if (!s.stack || s.stack[period].includes(productId)) return s;
+      const stack = { ...s.stack, [period]: [...s.stack[period], productId] };
+      return { ...s, stack, using: uniq([...s.using, productId]) };
+    });
+  }, []);
+
+  // Remove a product from a routine period. Drops it from `using` once it's gone from both.
+  const removeFromRoutine = useCallback((period: 'am' | 'pm', productId: string) => {
+    setState((s) => {
+      if (!s.stack) return s;
+      const stack = { ...s.stack, [period]: s.stack[period].filter((x) => x !== productId) };
+      const stillInRoutine = stack.am.includes(productId) || stack.pm.includes(productId);
+      const using = stillInRoutine ? s.using : s.using.filter((x) => x !== productId);
+      return { ...s, stack, using };
     });
   }, []);
 
@@ -681,6 +703,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     isUsing,
     toggleUsing,
     swapProduct,
+    addToRoutine,
+    removeFromRoutine,
     getLog,
     toggleUsedToday,
     setUsedToday,

@@ -151,6 +151,7 @@ export interface UserProfile {
   tone?: Tone; // shade phenotype (drives Shade Match) — editable later
   undertone?: Undertone;
   interests?: Interest[]; // what they're into — shapes the feed & prunes onboarding
+  shades?: { productId: string; shade: string }[]; // self-submitted foundation/concealer matches
 }
 
 const GOAL_LABEL: Record<Concern, string> = {

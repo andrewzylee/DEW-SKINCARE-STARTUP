@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ChevronRight,
   FlaskConical,
   GripVertical,
   Plus,
@@ -16,6 +17,7 @@ import {
   getProduct,
   categoriesForDomain,
   productDomain,
+  type Category,
   type Domain,
 } from '../data/mockCatalog';
 import { useStore } from '../state/store';
@@ -90,6 +92,7 @@ export function Shelf() {
   const [trialPickerOpen, setTrialPickerOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<string | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
+  const [trialsOpen, setTrialsOpen] = useState(false);
 
   // Ranking flow: quick reaction (seeds the search range) → pairwise compares → result screen.
   const startRank = (productId: string) => {
@@ -142,15 +145,6 @@ export function Shelf() {
     setFlow(null);
   };
 
-  const counts = useMemo(
-    () => ({
-      makeup: rankedShelf.filter((it) => it.domain === 'makeup').length,
-      skincare: rankedShelf.filter((it) => it.domain === 'skincare').length,
-      fragrance: rankedShelf.filter((it) => it.domain === 'fragrance').length,
-    }),
-    [rankedShelf],
-  );
-
   const grouped = useMemo(
     () =>
       categoriesForDomain(domain)
@@ -181,53 +175,69 @@ export function Shelf() {
           value={domain}
           onChange={setDomain}
           options={[
-            { value: 'makeup', label: `Makeup${counts.makeup ? ` · ${counts.makeup}` : ''}` },
-            { value: 'skincare', label: `Skin${counts.skincare ? ` · ${counts.skincare}` : ''}` },
-            { value: 'fragrance', label: `Scent${counts.fragrance ? ` · ${counts.fragrance}` : ''}` },
+            { value: 'makeup', label: 'Makeup' },
+            { value: 'skincare', label: 'Skincare' },
+            { value: 'fragrance', label: 'Fragrance' },
           ]}
         />
       </div>
 
-      <div className="mt-3 flex gap-2 px-5">
-        <PillButton fullWidth onClick={() => setPickerOpen(true)}>
+      {/* Primary CTA — ranking is the whole point of the Shelf */}
+      <div className="mt-3 px-5">
+        <PillButton size="lg" fullWidth onClick={() => setPickerOpen(true)}>
           <Plus size={18} />
-          Rank
-        </PillButton>
-        <PillButton variant="secondary" fullWidth onClick={() => setTrialPickerOpen(true)}>
-          <FlaskConical size={18} />
-          Start a trial
+          Rank a product
         </PillButton>
       </div>
 
-      {activeTrials.length > 0 && (
-        <div className="mt-5 px-5">
-          <h2 className="mb-2 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
-            In trial
-          </h2>
-          <div className="flex flex-col gap-2">
-            {activeTrials.map((t) => {
-              const p = getProduct(t.productId);
-              if (!p) return null;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => openTrial(t.id)}
-                  className="flex items-center gap-3 rounded-[18px] bg-surface p-2.5 text-left shadow-card transition-transform active:scale-[0.99]"
-                >
-                  <ProductImage id={p.id} brand={p.brand} name={p.name} size="md" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-semibold leading-tight">{p.name}</div>
-                    <div className="num text-[12.5px] text-muted">
-                      Day {dayNumber(t.startDate, today)} · {t.checkins.length} check-in
-                      {t.checkins.length === 1 ? '' : 's'}
-                    </div>
+      {/* Trials — secondary, collapsed into a small row */}
+      <div className="mt-2.5 flex items-center justify-between px-5">
+        {activeTrials.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setTrialsOpen((v) => !v)}
+            className="flex items-center gap-1.5 text-[13px] font-medium text-muted active:opacity-70"
+          >
+            <FlaskConical size={15} className="text-accent" />
+            {activeTrials.length} active trial{activeTrials.length === 1 ? '' : 's'}
+            <ChevronRight size={14} className={cn('transition-transform', trialsOpen && 'rotate-90')} />
+          </button>
+        ) : (
+          <span />
+        )}
+        <button
+          type="button"
+          onClick={() => setTrialPickerOpen(true)}
+          className="text-[13px] font-semibold text-accent"
+        >
+          Start a trial
+        </button>
+      </div>
+
+      {trialsOpen && activeTrials.length > 0 && (
+        <div className="mt-2 flex flex-col gap-2 px-5">
+          {activeTrials.map((t) => {
+            const p = getProduct(t.productId);
+            if (!p) return null;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => openTrial(t.id)}
+                className="flex items-center gap-3 rounded-[18px] bg-surface p-2.5 text-left shadow-card transition-transform active:scale-[0.99]"
+              >
+                <ProductImage id={p.id} brand={p.brand} name={p.name} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[14.5px] font-semibold leading-tight">{p.name}</div>
+                  <div className="num text-[12px] text-muted">
+                    Day {dayNumber(t.startDate, today)} · {t.checkins.length} check-in
+                    {t.checkins.length === 1 ? '' : 's'}
                   </div>
-                  <FlaskConical size={16} className="text-accent" />
-                </button>
-              );
-            })}
-          </div>
+                </div>
+                <FlaskConical size={15} className="text-accent" />
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -235,9 +245,11 @@ export function Shelf() {
         <div className="mt-5 px-5">
           {grouped.map((g) => (
             <div key={g.category} className="mb-5">
-              <div className="flex items-baseline gap-2 pb-2">
-                <h2 className="font-display text-[21px] font-semibold">{categoryLabel(g.category)}</h2>
-                <span className="num text-[12.5px] text-muted">
+              <div className="flex items-baseline justify-between pb-2.5">
+                <h2 className="font-display text-[23px] font-semibold text-ink">
+                  {categoryLabel(g.category)}
+                </h2>
+                <span className="num text-[12.5px] font-medium text-muted">
                   {g.items.length} ranked
                 </span>
               </div>
@@ -254,12 +266,13 @@ export function Shelf() {
                     <ShelfRow
                       key={it.productId}
                       id={it.productId}
-                      groupRank={it.groupRank}
+                      rank={it.groupRank}
+                      size={it.groupSize}
                       tier={it.tier}
                       name={p.name}
                       brand={p.brand}
-                      note={it.note}
-                      price={p.price}
+                      reaction={it.reaction}
+                      category={it.category}
                       onOpen={() => setDetailFor(it.productId)}
                     />
                   );
@@ -323,59 +336,76 @@ export function Shelf() {
   );
 }
 
+const REACTION_VIEW: Record<Reaction, { e: string; l: string }> = {
+  love: { e: '😍', l: 'Love' },
+  like: { e: '🙂', l: 'Like' },
+  fine: { e: '😐', l: 'Fine' },
+  dislike: { e: '🙁', l: 'Meh' },
+  never: { e: '💀', l: 'Never' },
+};
+
+// Rank-first card: the big two-digit position (tier-colored) is the hero, then image, name, brand,
+// reaction, and "#n of N blushes".
 function ShelfRow({
   id,
-  groupRank,
+  rank,
+  size,
   tier,
   name,
   brand,
-  note,
-  price,
+  reaction,
+  category,
   onOpen,
 }: {
   id: string;
-  groupRank: number;
+  rank: number;
+  size: number;
   tier: Tier;
   name: string;
   brand: string;
-  note?: string;
-  price: number;
+  reaction?: Reaction;
+  category: Category;
   onOpen: () => void;
 }) {
   const controls = useDragControls();
+  const rx = reaction ? REACTION_VIEW[reaction] : null;
   return (
     <Reorder.Item
       value={id}
       dragListener={false}
       dragControls={controls}
-      className="flex items-center gap-2 overflow-hidden rounded-[20px] bg-surface p-3 pr-4 shadow-card"
+      className="flex items-center gap-2.5 overflow-hidden rounded-[20px] bg-surface p-3 shadow-card"
     >
       <span
         onPointerDown={(e) => controls.start(e)}
-        className="-ml-1 shrink-0 cursor-grab touch-none p-1 text-muted/70 active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none text-muted/50 active:cursor-grabbing"
         aria-label="Drag to reorder"
       >
-        <GripVertical size={18} />
+        <GripVertical size={16} />
+      </span>
+      <span
+        className="num w-9 shrink-0 text-center font-display text-[27px] font-semibold leading-none"
+        style={{ color: tierVar(tier) }}
+      >
+        {String(rank).padStart(2, '0')}
       </span>
       <button
         type="button"
         onClick={onOpen}
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
-        <span
-          className="num w-6 shrink-0 text-center text-[17px] font-bold leading-none"
-          style={{ color: tierVar(tier) }}
-        >
-          {groupRank}
-        </span>
-        <ProductImage id={id} brand={brand} name={name} size="sm" />
+        <ProductImage id={id} brand={brand} name={name} size="md" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-semibold leading-tight">{name}</div>
-          <div className="truncate text-[12.5px] text-muted">{note ? note : brand}</div>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <TierBadge tier={tier} size="sm" />
-          <span className="num text-[11.5px] text-muted">${price}</span>
+          <div className="truncate text-[15.5px] font-semibold leading-tight">{name}</div>
+          <div className="truncate text-[12.5px] text-muted">{brand}</div>
+          {rx && (
+            <div className="mt-1 text-[12.5px] text-ink">
+              {rx.e} <span className="font-medium">{rx.l}</span>
+            </div>
+          )}
+          <div className="num mt-0.5 text-[11.5px] text-muted">
+            #{rank} of {size} {categoryPlural(category)}
+          </div>
         </div>
       </button>
     </Reorder.Item>
