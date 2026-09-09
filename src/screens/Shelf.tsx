@@ -5,7 +5,6 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
-  ChevronRight,
   FlaskConical,
   GripVertical,
   Plus,
@@ -21,6 +20,7 @@ import {
   type Domain,
 } from '../data/mockCatalog';
 import { useStore } from '../state/store';
+import { Stack } from './Stack';
 import { useUI } from '../state/ui';
 import {
   applyCompare,
@@ -92,7 +92,7 @@ export function Shelf() {
   const [trialPickerOpen, setTrialPickerOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<string | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
-  const [trialsOpen, setTrialsOpen] = useState(false);
+  const [section, setSection] = useState<'products' | 'routines' | 'trials'>('products');
 
   // Ranking flow: quick reaction (seeds the search range) → pairwise compares → result screen.
   const startRank = (productId: string) => {
@@ -163,86 +163,89 @@ export function Shelf() {
       <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-6">
         <div>
           <h1 className="font-display text-[34px] font-semibold leading-none">Shelf</h1>
-          <p className="mt-2 text-[15px] text-muted">
-            Everything you've tried, ranked head-to-head within each category.
-          </p>
+          <p className="mt-2 text-[15px] text-muted">Everything you've tried, saved and use.</p>
         </div>
       </div>
 
-      <div className="px-5">
-        <SegmentedToggle<Domain>
-          layoutId="shelf-domain"
-          value={domain}
-          onChange={setDomain}
+      <div className="px-5 pb-1">
+        <SegmentedToggle<'products' | 'routines' | 'trials'>
+          layoutId="shelf-section"
+          value={section}
+          onChange={setSection}
           options={[
-            { value: 'makeup', label: 'Makeup' },
-            { value: 'skincare', label: 'Skincare' },
-            { value: 'fragrance', label: 'Fragrance' },
+            { value: 'products', label: 'Products' },
+            { value: 'routines', label: 'Routines' },
+            { value: 'trials', label: 'Trials' },
           ]}
         />
       </div>
 
-      {/* Primary CTA — ranking is the whole point of the Shelf */}
-      <div className="mt-3 px-5">
-        <PillButton size="lg" fullWidth onClick={() => setPickerOpen(true)}>
-          <Plus size={18} />
-          Rank a product
-        </PillButton>
-      </div>
+      {section === 'routines' && <Stack embedded />}
 
-      {/* Trials — secondary, collapsed into a small row */}
-      <div className="mt-2.5 flex items-center justify-between px-5">
-        {activeTrials.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setTrialsOpen((v) => !v)}
-            className="flex items-center gap-1.5 text-[13px] font-medium text-muted active:opacity-70"
-          >
-            <FlaskConical size={15} className="text-accent" />
-            {activeTrials.length} active trial{activeTrials.length === 1 ? '' : 's'}
-            <ChevronRight size={14} className={cn('transition-transform', trialsOpen && 'rotate-90')} />
-          </button>
-        ) : (
-          <span />
-        )}
-        <button
-          type="button"
-          onClick={() => setTrialPickerOpen(true)}
-          className="text-[13px] font-semibold text-accent"
-        >
-          Start a trial
-        </button>
-      </div>
-
-      {trialsOpen && activeTrials.length > 0 && (
-        <div className="mt-2 flex flex-col gap-2 px-5">
-          {activeTrials.map((t) => {
-            const p = getProduct(t.productId);
-            if (!p) return null;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => openTrial(t.id)}
-                className="flex items-center gap-3 rounded-[18px] bg-surface p-2.5 text-left shadow-card transition-transform active:scale-[0.99]"
-              >
-                <ProductImage id={p.id} brand={p.brand} name={p.name} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14.5px] font-semibold leading-tight">{p.name}</div>
-                  <div className="num text-[12px] text-muted">
-                    Day {dayNumber(t.startDate, today)} · {t.checkins.length} check-in
-                    {t.checkins.length === 1 ? '' : 's'}
-                  </div>
-                </div>
-                <FlaskConical size={15} className="text-accent" />
-              </button>
-            );
-          })}
+      {section === 'trials' && (
+        <div className="mt-3 px-5">
+          <PillButton size="lg" fullWidth onClick={() => setTrialPickerOpen(true)}>
+            <FlaskConical size={18} />
+            Start a trial
+          </PillButton>
+          {activeTrials.length === 0 ? (
+            <p className="mt-6 text-center text-[13.5px] leading-snug text-muted">
+              No active trials yet. Track a product over time to see if it actually works for you.
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col gap-2">
+              {activeTrials.map((t) => {
+                const p = getProduct(t.productId);
+                if (!p) return null;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => openTrial(t.id)}
+                    className="flex items-center gap-3 rounded-[18px] bg-surface p-2.5 text-left shadow-card transition-transform active:scale-[0.99]"
+                  >
+                    <ProductImage id={p.id} brand={p.brand} name={p.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14.5px] font-semibold leading-tight">{p.name}</div>
+                      <div className="num text-[12px] text-muted">
+                        Day {dayNumber(t.startDate, today)} · {t.checkins.length} check-in
+                        {t.checkins.length === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    <FlaskConical size={15} className="text-accent" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {grouped.length > 0 ? (
-        <div className="mt-5 px-5">
+      {section === 'products' && (
+        <>
+          <div className="mt-3 px-5">
+            <SegmentedToggle<Domain>
+              layoutId="shelf-domain"
+              value={domain}
+              onChange={setDomain}
+              options={[
+                { value: 'makeup', label: 'Makeup' },
+                { value: 'skincare', label: 'Skincare' },
+                { value: 'fragrance', label: 'Fragrance' },
+              ]}
+            />
+          </div>
+
+          {/* Primary CTA — ranking is the whole point of the Shelf */}
+          <div className="mt-3 px-5">
+            <PillButton size="lg" fullWidth onClick={() => setPickerOpen(true)}>
+              <Plus size={18} />
+              Rank a product
+            </PillButton>
+          </div>
+
+          {grouped.length > 0 ? (
+            <div className="mt-5 px-5">
           {grouped.map((g) => (
             <div key={g.category} className="mb-5">
               <div className="flex items-baseline justify-between pb-2.5">
@@ -280,10 +283,12 @@ export function Shelf() {
               </Reorder.Group>
             </div>
           ))}
-        </div>
-      ) : activeTrials.length === 0 ? (
-        <EmptyState domain={domain} />
-      ) : null}
+            </div>
+          ) : (
+            <EmptyState domain={domain} />
+          )}
+        </>
+      )}
 
       {/* Pick a product to rank */}
       <Sheet open={pickerOpen} onClose={() => setPickerOpen(false)} title="Rank a product">
@@ -441,18 +446,19 @@ function ProductPicker({
   exclude: (id: string) => boolean;
   initialDomain: Domain;
 }) {
+  const { state } = useStore();
   const [q, setQ] = useState('');
   const [domain, setDomain] = useState<Domain>(initialDomain);
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
-    return catalog
+    return [...catalog, ...state.customProducts]
       .filter((p) => productDomain(p) === domain)
       .filter((p) => !exclude(p.id))
       .filter(
         (p) =>
           !term || p.name.toLowerCase().includes(term) || p.brand.toLowerCase().includes(term),
       );
-  }, [q, exclude, domain]);
+  }, [q, exclude, domain, state.customProducts]);
 
   return (
     <div className="pb-2">

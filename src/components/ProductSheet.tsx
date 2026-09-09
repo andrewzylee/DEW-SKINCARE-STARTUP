@@ -415,7 +415,7 @@ function Page({
                 <Check size={18} /> In your routine
               </>
             ) : (
-              <>Add to routine · ${p.price}</>
+              <>Add to routine{p.price ? ` · $${p.price}` : ''}</>
             )}
           </PillButton>
         </div>

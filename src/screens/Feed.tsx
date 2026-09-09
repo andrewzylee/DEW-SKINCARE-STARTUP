@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import {
   Bell,
   Calendar,
+  ChevronRight,
   Heart,
   Menu,
   MessageCircle,
+  Plus,
   Search,
   Send,
   SlidersHorizontal,
@@ -22,6 +24,7 @@ import {
   rankMoves,
   seedComments,
   type FeaturedList,
+  type FeedActivity,
 } from '../data/social';
 import { feedToPost } from '../lib/activity';
 import { tasteItemsFromRanked, tasteMatchWithFriend, type TasteItem } from '../lib/taste';
@@ -31,7 +34,6 @@ import { INTEREST_META, type UserProfile } from '../data/quiz';
 import { tierVar, type Tier } from '../lib/ranking';
 import { cn } from '../lib/cn';
 import { listContainer, listItem, spring } from '../lib/motion';
-import type { TabKey } from '../components/TabBar';
 import { Avatar } from '../components/Avatar';
 import { ProductImage } from '../components/ProductImage';
 import { CategoryTag, categoryLabel, categoryPlural } from '../components/CategoryTag';
@@ -52,16 +54,16 @@ function cohortFor(profile: UserProfile | null): string {
 }
 
 export function Feed({
-  go,
   onOpenCalendar,
   onOpenMenu,
+  mode = 'feed',
 }: {
-  go: (t: TabKey) => void;
   onOpenCalendar: () => void;
   onOpenMenu: () => void;
+  mode?: 'feed' | 'discover';
 }) {
   const { state, rankedShelf } = useStore();
-  const { openProduct, openFriend, openShade, openBrowse } = useUI();
+  const { openProduct, openFriend, openShade, openBrowse, openTwins } = useUI();
   const [view, setView] = useState<View>('foryou');
   const [q, setQ] = useState('');
 
@@ -84,13 +86,13 @@ export function Feed({
   const results = useMemo(() => {
     const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
     if (!terms.length) return [];
-    return catalog
+    return [...catalog, ...state.customProducts]
       .filter((p) => {
         const hay = `${p.name} ${p.brand} ${p.category}`.toLowerCase();
         return terms.every((t) => hay.includes(t));
       })
       .slice(0, 12);
-  }, [q]);
+  }, [q, state.customProducts]);
 
   const feed = useMemo(() => {
     if (view === 'trending') return [...feedData].sort((a, b) => b.likes - a.likes);
@@ -103,41 +105,92 @@ export function Feed({
     [cohort],
   );
 
+  // One unified feed: friends' posts + friends' ranking moves + your own moves, interleaved by
+  // recency. (Replaces the separate "Latest moves" strip — it's all one stream now.)
+  const mergedFeed = useMemo(() => {
+    const parseMins = (s: string): number => {
+      const m = s.match(/(\d+)\s*(m|min|h|hour|d|day|w|week)/i);
+      if (!m) return 99999;
+      const n = Number(m[1]);
+      const u = m[2][0].toLowerCase();
+      return u === 'm' ? n : u === 'h' ? n * 60 : u === 'd' ? n * 1440 : n * 10080;
+    };
+    const myMoves: MoveItem[] = state.rankEvents.slice(0, 3).map((e) => ({
+      id: e.id,
+      isMe: true,
+      name: state.account.displayName,
+      avatar: state.account.avatar,
+      productId: e.productId,
+      fromRank: e.fromRank,
+      toRank: e.toRank,
+      groupSize: e.groupSize,
+      reason: e.reason,
+      timeAgo: relTime(e.ts),
+    }));
+    const friendMoves: MoveItem[] = rankMoves.map((m) => {
+      const person = getPerson(m.personId);
+      return {
+        id: m.id,
+        isMe: false,
+        personId: m.personId,
+        name: person?.name ?? 'Someone',
+        tint: person?.tint,
+        productId: m.productId,
+        fromRank: m.fromRank,
+        toRank: m.toRank,
+        groupSize: m.groupSize,
+        reason: m.reason,
+        timeAgo: m.timeAgo,
+      };
+    });
+    type Entry =
+      | { key: string; mins: number; kind: 'post'; post: FeedActivity }
+      | { key: string; mins: number; kind: 'move'; move: MoveItem };
+    const entries: Entry[] = [
+      ...feed.map((p) => ({ key: `p-${p.id}`, mins: parseMins(p.timeAgo), kind: 'post' as const, post: p })),
+      ...myMoves.map((m) => ({ key: `mm-${m.id}`, mins: parseMins(m.timeAgo), kind: 'move' as const, move: m })),
+      ...friendMoves.map((m) => ({ key: `fm-${m.id}`, mins: parseMins(m.timeAgo), kind: 'move' as const, move: m })),
+    ];
+    return entries.sort((a, b) => a.mins - b.mins);
+  }, [feed, state.rankEvents, state.account]);
+
   return (
     <div className="pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-6">
-        <span className="font-display text-[26px] font-semibold tracking-tight text-ink">Dew</span>
-        <div className="flex items-center gap-3 text-ink">
-          <button type="button" onClick={onOpenCalendar} aria-label="Progress calendar">
-            <Calendar size={20} className="text-muted" />
-          </button>
-          <button type="button" className="relative" aria-label="Notifications">
-            <Bell size={21} className="text-muted" />
-            <span className="num absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-tier-f px-1 text-[10px] font-bold text-white">
-              1
-            </span>
-          </button>
-          <button type="button" onClick={onOpenMenu} aria-label="Menu">
-            <Menu size={22} className="text-muted" />
-          </button>
+      {/* Header — Feed shows the Dew wordmark; Discover leads with search */}
+      {mode === 'feed' ? (
+        <div className="flex items-center justify-between px-5 pt-6">
+          <span className="font-display text-[26px] font-semibold tracking-tight text-ink">Dew</span>
+          <div className="flex items-center gap-3 text-ink">
+            <button type="button" onClick={onOpenCalendar} aria-label="Progress calendar">
+              <Calendar size={20} className="text-muted" />
+            </button>
+            <button type="button" className="relative" aria-label="Notifications">
+              <Bell size={21} className="text-muted" />
+              <span className="num absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-tier-f px-1 text-[10px] font-bold text-white">
+                1
+              </span>
+            </button>
+            <button type="button" onClick={onOpenMenu} aria-label="Menu">
+              <Menu size={22} className="text-muted" />
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Search */}
-      <div className="px-5 pt-4">
-        <div className="flex items-center gap-2 rounded-full bg-ink/[0.05] px-4">
-          <Search size={17} className="text-muted" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search product, brand, concern"
-            className="w-full bg-transparent py-3 text-[15px] outline-none placeholder:text-muted"
-          />
+      ) : (
+        <div className="px-5 pt-6">
+          <h1 className="font-display text-[30px] font-semibold leading-none">Discover</h1>
+          <div className="mt-4 flex items-center gap-2 rounded-full bg-ink/[0.05] px-4">
+            <Search size={17} className="text-muted" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search products, brands, concerns"
+              className="w-full bg-transparent py-3 text-[15px] outline-none placeholder:text-muted"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {!q.trim() && (
+      {mode === 'discover' && !q.trim() && (
         <div className="px-5 pt-2">
           <button
             type="button"
@@ -153,9 +206,11 @@ export function Feed({
         </div>
       )}
 
-      {q.trim() ? (
-        <SearchResults results={results} owned={owned} />
-      ) : (
+      {mode === 'discover' && q.trim() && (
+        <SearchResults results={results} owned={owned} query={q} />
+      )}
+
+      {mode === 'discover' && !q.trim() && (
         <>
           {/* Chips */}
           <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-5">
@@ -185,19 +240,20 @@ export function Feed({
               <button
                 type="button"
                 onClick={openShade}
-                className="flex w-full items-center gap-3 rounded-[20px] p-4 text-left text-white shadow-card transition-transform active:scale-[0.99]"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(120deg, rgb(var(--makeup)), rgb(var(--makeup) / 0.78) 55%, #e59a6a)',
-                }}
+                className="flex w-full items-center gap-3 rounded-[20px] bg-makeup-soft p-4 text-left shadow-card transition-transform active:scale-[0.99]"
               >
-                <Sparkles size={22} className="shrink-0" />
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-makeup/15 text-makeup-ink">
+                  <Sparkles size={20} />
+                </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-bold leading-tight">Find your Shade Match</div>
-                  <div className="text-[12.5px] opacity-90">
+                  <div className="text-[15px] font-semibold leading-tight text-makeup-ink">
+                    Find your Shade Match
+                  </div>
+                  <div className="text-[12.5px] text-makeup-ink/70">
                     Foundation, concealer & blush that suit your tone.
                   </div>
                 </div>
+                <ChevronRight size={18} className="shrink-0 text-makeup-ink/50" />
               </button>
             </div>
           )}
@@ -215,17 +271,14 @@ export function Feed({
           )}
 
           {/* Your taste twins — friends ranked by how much your beauty taste lines up */}
-          <TasteTwins mine={myTaste} onOpen={openFriend} />
+          <TasteTwins mine={myTaste} onOpen={openFriend} onSeeAll={openTwins} />
 
           {/* Featured lists */}
           <div className="mt-6">
-            <div className="flex items-center justify-between px-5">
+            <div className="px-5">
               <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
                 Featured lists
               </h2>
-              <button type="button" onClick={() => go('shelf')} className="text-[13px] font-semibold text-accent">
-                See all
-              </button>
             </div>
             <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto px-5 pb-1">
               {lists.map((list) => (
@@ -278,27 +331,38 @@ export function Feed({
             </div>
           )}
 
-          {/* Latest moves — ranking changes (only a ranking-native app can show this) */}
-          <LatestMoves />
-
-          {/* Your feed */}
-          <div className="mt-6 px-5">
-            <h2 className="mb-1 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
-              Your feed
-            </h2>
-            <motion.div variants={listContainer} initial="initial" animate="animate" className="flex flex-col">
-              {feed.map((item) => (
-                <FeedCard key={item.id} item={item} />
-              ))}
-            </motion.div>
-          </div>
         </>
+      )}
+
+      {mode === 'feed' && (
+        <div className="mt-6 px-5">
+          <h2 className="mb-2 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
+            Your feed
+          </h2>
+          <motion.div variants={listContainer} initial="initial" animate="animate" className="flex flex-col">
+            {mergedFeed.map((entry) =>
+              entry.kind === 'post' ? (
+                <FeedCard key={entry.key} item={entry.post} />
+              ) : (
+                <MoveRow key={entry.key} m={entry.move} onProduct={openProduct} onFriend={openFriend} />
+              ),
+            )}
+          </motion.div>
+        </div>
       )}
     </div>
   );
 }
 
-function TasteTwins({ mine, onOpen }: { mine: TasteItem[]; onOpen: (id: string) => void }) {
+function TasteTwins({
+  mine,
+  onOpen,
+  onSeeAll,
+}: {
+  mine: TasteItem[];
+  onOpen: (id: string) => void;
+  onSeeAll: () => void;
+}) {
   const twins = useMemo(
     () =>
       people
@@ -306,6 +370,7 @@ function TasteTwins({ mine, onOpen }: { mine: TasteItem[]; onOpen: (id: string) 
         .sort((a, b) => b.m.score - a.m.score),
     [mine],
   );
+  const shown = twins.slice(0, 5);
 
   return (
     <div className="mt-5">
@@ -313,21 +378,29 @@ function TasteTwins({ mine, onOpen }: { mine: TasteItem[]; onOpen: (id: string) 
         <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
           Your taste twins
         </h2>
-        <span className="text-[12px] text-muted">who ranks like you</span>
+        {twins.length > 5 ? (
+          <button
+            type="button"
+            onClick={onSeeAll}
+            className="text-[13px] font-semibold text-accent"
+          >
+            See all
+          </button>
+        ) : (
+          <span className="text-[12px] text-muted">who ranks like you</span>
+        )}
       </div>
       <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-5 pb-1">
-        {twins.map(({ p, m }) => (
+        {shown.map(({ p, m }) => (
           <button
             key={p.id}
             type="button"
             onClick={() => onOpen(p.id)}
-            className="flex w-[64px] shrink-0 flex-col items-center"
+            className="flex w-16 shrink-0 flex-col items-center"
           >
             <div className="relative">
-              <Avatar name={p.name} tint={p.tint} size="lg" />
-              <span
-                className="num absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full border-2 border-bg bg-ink px-1.5 py-0.5 text-[10px] font-bold text-white"
-              >
+              <Avatar name={p.name} tint={p.tint} size="md" className="!h-14 !w-14 !text-xl" />
+              <span className="num absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full border-2 border-bg bg-ink px-1.5 py-0.5 text-[10px] font-bold text-white">
                 {m.score}%
               </span>
             </div>
@@ -362,53 +435,6 @@ interface MoveItem {
   groupSize: number;
   reason?: string;
   timeAgo: string;
-}
-
-function LatestMoves() {
-  const { state } = useStore();
-  const { openProduct, openFriend } = useUI();
-  const mine: MoveItem[] = state.rankEvents.slice(0, 4).map((e) => ({
-    id: e.id,
-    isMe: true,
-    name: state.account.displayName,
-    avatar: state.account.avatar,
-    productId: e.productId,
-    fromRank: e.fromRank,
-    toRank: e.toRank,
-    groupSize: e.groupSize,
-    reason: e.reason,
-    timeAgo: relTime(e.ts),
-  }));
-  const friends: MoveItem[] = rankMoves.map((m) => {
-    const person = getPerson(m.personId);
-    return {
-      id: m.id,
-      isMe: false,
-      personId: m.personId,
-      name: person?.name ?? 'Someone',
-      tint: person?.tint,
-      productId: m.productId,
-      fromRank: m.fromRank,
-      toRank: m.toRank,
-      groupSize: m.groupSize,
-      reason: m.reason,
-      timeAgo: m.timeAgo,
-    };
-  });
-  const items = [...mine, ...friends].slice(0, 7);
-  if (items.length === 0) return null;
-  return (
-    <div className="mt-6 px-5">
-      <h2 className="mb-1 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
-        Latest moves
-      </h2>
-      <div className="flex flex-col">
-        {items.map((m) => (
-          <MoveRow key={m.id} m={m} onProduct={openProduct} onFriend={openFriend} />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function MoveRow({
@@ -483,13 +509,18 @@ function MoveBadge({ from, to }: { from: number | null; to: number }) {
   );
 }
 
-function SearchResults({ results, owned }: { results: Product[]; owned: Set<string> }) {
-  const { openProduct } = useUI();
+function SearchResults({
+  results,
+  owned,
+  query,
+}: {
+  results: Product[];
+  owned: Set<string>;
+  query: string;
+}) {
+  const { openProduct, openAddProduct } = useUI();
   return (
     <div className="mt-3 flex flex-col gap-2 px-5">
-      {results.length === 0 && (
-        <p className="py-10 text-center text-sm text-muted">No products match that yet.</p>
-      )}
       {results.map((p) => (
         <button
           key={p.id}
@@ -511,6 +542,23 @@ function SearchResults({ results, owned }: { results: Product[]; owned: Set<stri
           )}
         </button>
       ))}
+
+      {/* Search-first: the "+" fallback when it isn't already on Dew. */}
+      <button
+        type="button"
+        onClick={() => openAddProduct(query)}
+        className="mt-1 flex w-full items-center gap-3 rounded-[18px] border border-dashed border-line bg-surface/60 p-3 text-left transition-transform active:scale-[0.99]"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
+          <Plus size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14.5px] font-semibold">
+            {results.length ? 'Not seeing it?' : `Add “${query.trim()}”`}
+          </div>
+          <div className="text-[12.5px] text-muted">Add a product — just a photo + name</div>
+        </div>
+      </button>
     </div>
   );
 }

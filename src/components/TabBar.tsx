@@ -1,18 +1,21 @@
 import type { ReactNode } from 'react';
-import { BarChart3, Layers, Newspaper, Plus, User } from 'lucide-react';
+import { BarChart3, Compass, Newspaper, Plus, User } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { Avatar } from './Avatar';
 
-export type TabKey = 'feed' | 'stack' | 'log' | 'shelf' | 'profile';
+export type TabKey = 'feed' | 'discover' | 'shelf' | 'profile';
 
-// Fixed bottom tab bar with a prominent center "+" (Log), Beli-style.
+// Fixed bottom tab bar. Feed (social) · Discover (find) · ＋ (do something) · Shelf (your beauty) ·
+// Profile (you). The center ＋ is an action, not a tab — it opens the "what do you want to do?" sheet.
 export function TabBar({
   active,
   onChange,
+  onCreate,
   avatar,
 }: {
   active: TabKey;
   onChange: (t: TabKey) => void;
+  onCreate: () => void;
   avatar?: { name: string; src?: string; tint?: string };
 }) {
   return (
@@ -21,33 +24,21 @@ export function TabBar({
         <TabItem label="Feed" on={active === 'feed'} onClick={() => onChange('feed')}>
           <Newspaper size={22} strokeWidth={active === 'feed' ? 2.4 : 1.9} />
         </TabItem>
-        <TabItem label="Routine" on={active === 'stack'} onClick={() => onChange('stack')}>
-          <Layers size={22} strokeWidth={active === 'stack' ? 2.4 : 1.9} />
+        <TabItem label="Discover" on={active === 'discover'} onClick={() => onChange('discover')}>
+          <Compass size={22} strokeWidth={active === 'discover' ? 2.4 : 1.9} />
         </TabItem>
 
-        {/* Center: Log check-in */}
+        {/* Center: "do something" action sheet (rate, log, add, trial) */}
         <button
           type="button"
-          onClick={() => onChange('log')}
+          onClick={onCreate}
           className="flex flex-1 flex-col items-center gap-1 pb-2"
-          aria-label="Log"
+          aria-label="Rate, log, or add"
         >
-          <span
-            className={cn(
-              'grid h-[52px] w-[52px] -translate-y-3 place-items-center rounded-full bg-accent text-white shadow-pop transition-transform active:scale-95',
-              active === 'log' && 'ring-4 ring-accent-soft',
-            )}
-          >
+          <span className="grid h-[52px] w-[52px] -translate-y-3 place-items-center rounded-full bg-accent text-white shadow-pop transition-transform active:scale-95">
             <Plus size={26} strokeWidth={2.6} />
           </span>
-          <span
-            className={cn(
-              '-mt-2 text-[11px] font-medium',
-              active === 'log' ? 'text-accent' : 'text-muted',
-            )}
-          >
-            Log
-          </span>
+          <span className="-mt-2 text-[11px] font-medium text-muted">Add</span>
         </button>
 
         <TabItem label="Shelf" on={active === 'shelf'} onClick={() => onChange('shelf')}>

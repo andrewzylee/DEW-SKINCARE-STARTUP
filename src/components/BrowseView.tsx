@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Check, ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 import {
   catalog,
   categoriesForDomain,
@@ -42,10 +42,12 @@ export function BrowseView({
   open,
   onClose,
   onOpenProduct,
+  onAddProduct,
 }: {
   open: boolean;
   onClose: () => void;
   onOpenProduct: (productId: string) => void;
+  onAddProduct: (prefillName?: string, defaultDomain?: Domain) => void;
 }) {
   const root = typeof document !== 'undefined' ? document.getElementById('stack-overlay') : null;
   const { state } = useStore();
@@ -70,7 +72,7 @@ export function BrowseView({
   // Everything except the brand filter — so the brand list can show contextual counts.
   const preBrand = useMemo(() => {
     const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return catalog.filter((p) => {
+    return [...catalog, ...state.customProducts].filter((p) => {
       if (domain !== 'all' && productDomain(p) !== domain) return false;
       if (category !== 'all' && p.category !== category) return false;
       if (prices.size && !prices.has(p.priceTier)) return false;
@@ -81,7 +83,7 @@ export function BrowseView({
       }
       return true;
     });
-  }, [q, domain, category, prices]);
+  }, [q, domain, category, prices, state.customProducts]);
 
   const results = useMemo(() => {
     const list = brands.size ? preBrand.filter((p) => brands.has(p.brand)) : preBrand;
@@ -244,17 +246,36 @@ export function BrowseView({
                       Yours
                     </span>
                   ) : (
-                    <span className="num shrink-0 text-[14px] font-semibold">${p.price}</span>
+                    <span className="num shrink-0 text-[14px] font-semibold">
+                      {p.price ? `$${p.price}` : '—'}
+                    </span>
                   )}
                 </button>
               ))}
             </div>
 
             {results.length === 0 && (
-              <p className="py-16 text-center text-[13.5px] text-muted">
-                No products match these filters.
+              <p className="pt-14 pb-3 text-center text-[13.5px] text-muted">
+                Nothing matches these filters yet.
               </p>
             )}
+
+            {/* Search-first: the "+" fallback when it isn't on Dew yet. */}
+            <button
+              type="button"
+              onClick={() => onAddProduct(q, domain !== 'all' ? domain : 'skincare')}
+              className="mt-2 flex w-full items-center gap-3 rounded-[18px] border border-dashed border-line bg-surface/60 p-3 text-left transition-transform active:scale-[0.99]"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
+                <Plus size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14.5px] font-semibold">
+                  {q.trim() ? `Add “${q.trim()}”` : 'Add a product'}
+                </div>
+                <div className="text-[12.5px] text-muted">Not on Dew yet? Photo + name.</div>
+              </div>
+            </button>
             {limit < results.length && (
               <button
                 type="button"

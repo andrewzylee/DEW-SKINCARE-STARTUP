@@ -12,7 +12,14 @@ import {
 } from 'react';
 import type { UserProfile } from '../data/quiz';
 import type { Comment } from '../data/social';
-import { getProduct, productDomain, type Category, type Domain } from '../data/mockCatalog';
+import {
+  getProduct,
+  productDomain,
+  registerCustomProducts,
+  type Category,
+  type Domain,
+  type Product,
+} from '../data/mockCatalog';
 import {
   reactionCap,
   recomputeTiersGrouped,
@@ -136,6 +143,7 @@ interface PersistedState {
   postComments: Record<string, Comment[]>; // comments you've added, keyed by post id
   likedPosts: string[];
   rankEvents: RankEvent[]; // your own ranking changes (newest first)
+  customProducts: Product[]; // community-added products (on-device, provisional)
 }
 
 const STORAGE_KEY = 'stack.state.v1';
@@ -155,6 +163,7 @@ const EMPTY: PersistedState = {
   postComments: {},
   likedPosts: [],
   rankEvents: [],
+  customProducts: [],
 };
 
 function load(): PersistedState {
@@ -163,7 +172,9 @@ function load(): PersistedState {
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as PersistedState;
     if (parsed.version !== VERSION) return EMPTY;
-    return { ...EMPTY, ...parsed };
+    const state = { ...EMPTY, ...parsed };
+    registerCustomProducts(state.customProducts); // rehydrate community adds so getProduct finds them
+    return state;
   } catch {
     return EMPTY;
   }
@@ -257,6 +268,7 @@ interface StoreValue {
   updateAccount(partial: Partial<Account>): void;
   updateProfile(partial: Partial<UserProfile>): void;
   setGoalPerWeek(n: number): void;
+  addCustomProduct(product: Product): void;
 
   // stack
   isUsing(productId: string): boolean;
@@ -340,6 +352,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const setGoalPerWeek = useCallback((n: number) => {
     setState((s) => ({ ...s, goalPerWeek: Math.max(1, Math.min(7, Math.round(n))) }));
+  }, []);
+
+  // Community add: register it for getProduct(), persist it, and it behaves like any catalog
+  // product (searchable, browsable, rankable, has a product page).
+  const addCustomProduct = useCallback((product: Product) => {
+    registerCustomProducts([product]);
+    setState((s) =>
+      s.customProducts.some((p) => p.id === product.id)
+        ? s
+        : { ...s, customProducts: [...s.customProducts, product] },
+    );
   }, []);
 
   const isUsing = useCallback((id: string) => state.using.includes(id), [state.using]);
@@ -700,6 +723,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     updateAccount,
     updateProfile,
     setGoalPerWeek,
+    addCustomProduct,
     isUsing,
     toggleUsing,
     swapProduct,

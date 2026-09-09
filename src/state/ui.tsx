@@ -7,8 +7,11 @@ import { FeaturedListView } from '../components/FeaturedListView';
 import { ShadeMatchView } from '../components/ShadeMatchView';
 import { ShadeFinderView } from '../components/ShadeFinderView';
 import { BrowseView } from '../components/BrowseView';
+import { TwinsView } from '../components/TwinsView';
+import { AddProductSheet } from '../components/AddProductSheet';
 import { WrappedCard } from '../screens/WrappedCard';
 import type { ActivityPost } from '../lib/activity';
+import type { Domain } from '../data/mockCatalog';
 
 // Lightweight UI-navigation context so any screen can open the Product (Skin Match) sheet, a
 // Trial, a friend's profile, a Post (score + comments), a Featured List, or Skin Wrapped —
@@ -23,6 +26,8 @@ interface UIValue {
   openShade(): void;
   openShadeFinder(): void;
   openBrowse(): void;
+  openTwins(): void;
+  openAddProduct(prefillName?: string, defaultDomain?: Domain): void;
   openWrapped(): void;
 }
 
@@ -37,6 +42,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [shadeOpen, setShadeOpen] = useState(false);
   const [shadeFinderOpen, setShadeFinderOpen] = useState(false);
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [twinsOpen, setTwinsOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addPrefill, setAddPrefill] = useState('');
+  const [addDomain, setAddDomain] = useState<Domain>('skincare');
   const [wrapped, setWrapped] = useState(false);
 
   const openProduct = useCallback((id: string) => {
@@ -103,11 +112,27 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setListId(null);
     setBrowseOpen(true);
   }, []);
+  // Taste twins "see all" — every friend compared to you; behind the Product/Friend sheets.
+  const openTwins = useCallback(() => {
+    setProductId(null);
+    setTrialId(null);
+    setPost(null);
+    setFriendId(null);
+    setListId(null);
+    setTwinsOpen(true);
+  }, []);
+  // Add a product — a bottom sheet that layers over the current surface (search/browse) and
+  // returns to it on close. Doesn't clear other overlays so Browse stays behind it.
+  const openAddProduct = useCallback((prefillName = '', defaultDomain: Domain = 'skincare') => {
+    setAddPrefill(prefillName);
+    setAddDomain(defaultDomain);
+    setAddOpen(true);
+  }, []);
   const openWrapped = useCallback(() => setWrapped(true), []);
 
   return (
     <UIContext.Provider
-      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openBrowse, openWrapped }}
+      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openBrowse, openTwins, openAddProduct, openWrapped }}
     >
       {children}
       <FeaturedListView listId={listId} onClose={() => setListId(null)} onOpenProduct={openProduct} />
@@ -126,6 +151,22 @@ export function UIProvider({ children }: { children: ReactNode }) {
         open={browseOpen}
         onClose={() => setBrowseOpen(false)}
         onOpenProduct={openProduct}
+        onAddProduct={openAddProduct}
+      />
+      <TwinsView open={twinsOpen} onClose={() => setTwinsOpen(false)} onOpenFriend={openFriend} />
+      <AddProductSheet
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        prefillName={addPrefill}
+        defaultDomain={addDomain}
+        onCreated={(p) => {
+          setAddOpen(false);
+          openProduct(p.id);
+        }}
+        onPickExisting={(id) => {
+          setAddOpen(false);
+          openProduct(id);
+        }}
       />
       <ProductSheet productId={productId} onClose={() => setProductId(null)} onOpenTrial={openTrial} />
       <TrialDetail trialId={trialId} onClose={() => setTrialId(null)} />

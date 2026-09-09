@@ -114,7 +114,7 @@ export function MorningHome({
             <h2 className="font-display text-[21px] font-semibold text-ink">Daily routine</h2>
             <button
               type="button"
-              onClick={() => go('stack')}
+              onClick={() => go('shelf')}
               className="text-[13.5px] font-medium text-accent-ink"
             >
               Edit

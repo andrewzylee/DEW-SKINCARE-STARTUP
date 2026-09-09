@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Flame, Info, Plus, RotateCcw, Settings2, Shuffle, Trash2 } from 'lucide-react';
+import { Info, Plus, RotateCcw, Settings2, Shuffle, Trash2 } from 'lucide-react';
 import { catalog, getProduct, productDomain, type Product, type SkinType } from '../data/mockCatalog';
 import { useStore } from '../state/store';
 import { cn } from '../lib/cn';
@@ -19,7 +19,7 @@ const SKIN_LABEL: Record<string, string> = {
   sensitive: 'Sensitive',
 };
 
-export function Stack() {
+export function Stack({ embedded = false }: { embedded?: boolean }) {
   const { state, streak, isUsing, toggleUsing, swapProduct, addToRoutine, removeFromRoutine, resetAll } =
     useStore();
   const [period, setPeriod] = useState<'am' | 'pm'>('am');
@@ -37,19 +37,23 @@ export function Stack() {
 
   return (
     <div className="pb-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 px-5 pb-1 pt-6">
-        <div className="min-w-0">
-          <h1 className="font-display text-[34px] font-semibold leading-none">Your Routine</h1>
-          <div className="mt-3 flex items-center gap-2">
-            <Chip>{SKIN_LABEL[profile.skinType]} skin</Chip>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1.5 text-[13px] shadow-card">
-              <Flame size={14} className="text-accent-bright" />
-              <span className="num font-semibold text-ink">{streak}</span>
-              <span className="text-muted">day{streak === 1 ? '' : 's'}</span>
-            </span>
+      {/* Header (the big title is hidden when embedded inside the Shelf's Routines tab) */}
+      <div className={cn('flex items-start justify-between gap-3 px-5', embedded ? 'pt-3' : 'pb-1 pt-6')}>
+        {embedded ? (
+          <div />
+        ) : (
+          <div className="min-w-0">
+            <h1 className="font-display text-[34px] font-semibold leading-none">Your Routine</h1>
+            <div className="mt-3 flex items-center gap-2">
+              <Chip>{SKIN_LABEL[profile.skinType]} skin</Chip>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1.5 text-[13px] shadow-card">
+                <span className="num font-semibold text-ink">{streak}</span>
+                <span className="text-muted">day{streak === 1 ? '' : 's'}</span>
+                <span aria-hidden="true">🔥</span>
+              </span>
+            </div>
           </div>
-        </div>
+        )}
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}

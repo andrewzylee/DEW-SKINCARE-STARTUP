@@ -31,15 +31,16 @@ import { Avatar } from '../components/Avatar';
 import { ProductImage } from '../components/ProductImage';
 import { StreakRing } from '../components/StreakRing';
 import { PillButton } from '../components/PillButton';
-import { SegmentedToggle } from '../components/SegmentedToggle';
 import { Sheet } from '../components/Sheet';
 
 export function Profile({
   go,
   onOpenCalendar,
+  onOpenLog,
 }: {
   go: (t: TabKey) => void;
   onOpenCalendar: () => void;
+  onOpenLog: () => void;
 }) {
   const { state, streak, rankedShelf, updateAccount, today } = useStore();
   const { openPost, openFriend, openWrapped, openProduct, openShadeFinder } = useUI();
@@ -48,7 +49,6 @@ export function Profile({
   const [editing, setEditing] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [peopleSheet, setPeopleSheet] = useState<null | 'followers' | 'following'>(null);
-  const [activityTab, setActivityTab] = useState<'activity' | 'playlists'>('activity');
 
   const daysLogged = Object.values(state.logs).filter(
     (e) => e.skinRating !== null && e.skinRating !== undefined,
@@ -254,7 +254,7 @@ export function Profile({
             <StreakRing count={streak} />
             <div className="min-w-0 flex-1">
               <div className="text-[15px] font-semibold">
-                {streak > 0 ? `${streak}-day streak` : 'Start your streak'}
+                {streak > 0 ? `${streak}-day streak 🔥` : 'Start your streak'}
               </div>
               <p className="text-[13px] leading-snug text-muted">
                 <span className="num">{daysLogged}</span> check-ins · tap for your calendar
@@ -263,7 +263,7 @@ export function Profile({
           </button>
           <button
             type="button"
-            onClick={() => go('log')}
+            onClick={onOpenLog}
             className="shrink-0 rounded-full bg-accent px-4 py-2 text-[13px] font-semibold text-white active:scale-95"
           >
             Log
@@ -275,34 +275,19 @@ export function Profile({
       <div className="mt-4 px-5">
         <div className="overflow-hidden rounded-card bg-surface shadow-card">
           <ListRow icon={BarChart3} label="Ranked" value={rankedShelf.length} onClick={() => go('shelf')} />
-          <ListRow icon={Layers} label="In your routine" value={usingCount} onClick={() => go('stack')} border />
-          <ListRow icon={ListChecks} label="Days logged" value={daysLogged} onClick={() => go('log')} border />
+          <ListRow icon={Layers} label="In your routine" value={usingCount} onClick={() => go('shelf')} border />
+          <ListRow icon={ListChecks} label="Days logged" value={daysLogged} onClick={onOpenLog} border />
           <ListRow icon={FlaskConical} label="Trials" value={state.trials.length} onClick={() => go('shelf')} border />
         </div>
       </div>
 
-      {/* Recent Activity / Playlists */}
-      <div className="mt-5 px-5">
-        <SegmentedToggle<'activity' | 'playlists'>
-          layoutId="profile-tab"
-          value={activityTab}
-          onChange={setActivityTab}
-          options={[
-            { value: 'activity', label: 'Recent Activity' },
-            { value: 'playlists', label: 'Playlists' },
-          ]}
-        />
+      {/* Recent Activity */}
+      <div className="mt-6 px-5">
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
+          Recent activity
+        </h2>
       </div>
-      {activityTab === 'activity' ? (
-        <RecentActivity posts={myPosts} onOpen={openPost} />
-      ) : (
-        <Playlists
-          ranked={rankedShelf}
-          usingCount={usingCount}
-          onOpen={() => go('shelf')}
-          onOpenRoutine={() => go('stack')}
-        />
-      )}
+      <RecentActivity posts={myPosts} onOpen={openPost} />
 
       {/* Edit profile */}
       <Sheet open={editing} onClose={() => setEditing(false)} title="Edit profile">
@@ -429,61 +414,6 @@ function RecentActivity({ posts, onOpen }: { posts: ActivityPost[]; onOpen: (p: 
           </button>
         );
       })}
-    </div>
-  );
-}
-
-const TIER_NAME: Record<Tier, string> = {
-  S: 'S · Elite',
-  A: 'A · Great',
-  B: 'B · Solid',
-  C: 'C · Okay',
-  F: 'F · Nope',
-};
-
-function Playlists({
-  ranked,
-  usingCount,
-  onOpen,
-  onOpenRoutine,
-}: {
-  ranked: { productId: string; tier: Tier }[];
-  usingCount: number;
-  onOpen: () => void;
-  onOpenRoutine: () => void;
-}) {
-  const tiers = (['S', 'A', 'B', 'C', 'F'] as Tier[])
-    .map((t) => ({ t, n: ranked.filter((r) => r.tier === t).length }))
-    .filter((x) => x.n > 0);
-  const tiles = [
-    { key: 'routine', label: 'In your routine', sub: `${usingCount} products`, color: 'rgb(var(--accent))', onClick: onOpenRoutine },
-    ...tiers.map((x) => ({
-      key: x.t,
-      label: TIER_NAME[x.t],
-      sub: `${x.n} product${x.n === 1 ? '' : 's'}`,
-      color: tierVar(x.t),
-      onClick: onOpen,
-    })),
-  ];
-  return (
-    <div className="mt-3 grid grid-cols-2 gap-3 px-5">
-      {tiles.map((t) => (
-        <button
-          key={t.key}
-          type="button"
-          onClick={t.onClick}
-          className="relative h-28 overflow-hidden rounded-[20px] p-3.5 text-left shadow-card"
-          style={{
-            backgroundColor: t.color,
-            backgroundImage: 'linear-gradient(0deg, rgba(15,17,21,0.38), rgba(15,17,21,0) 60%)',
-          }}
-        >
-          <div className="flex h-full flex-col justify-end">
-            <div className="text-[15px] font-bold text-white">{t.label}</div>
-            <div className="num text-[12px] text-white/85">{t.sub}</div>
-          </div>
-        </button>
-      ))}
     </div>
   );
 }

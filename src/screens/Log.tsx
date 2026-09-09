@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { getProduct, type Product } from '../data/mockCatalog';
 import { useStore } from '../state/store';
 import { cn } from '../lib/cn';
@@ -10,7 +10,7 @@ import { SkinRating } from '../components/SkinRating';
 import { ProductImage } from '../components/ProductImage';
 import { PillButton } from '../components/PillButton';
 
-export function Log({ go }: { go: (t: TabKey) => void }) {
+export function Log({ go, onClose }: { go: (t: TabKey) => void; onClose?: () => void }) {
   const {
     state,
     today,
@@ -66,9 +66,21 @@ export function Log({ go }: { go: (t: TabKey) => void }) {
   return (
     <div className="pb-8">
       <div className="flex items-center justify-between gap-3 px-5 pb-2 pt-6">
-        <div>
-          <h1 className="text-[28px] font-bold leading-none tracking-tight">Today</h1>
-          <p className="mt-2 text-[15px] text-muted">{dateLabel}</p>
+        <div className="flex items-center gap-2.5">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted hover:bg-ink/5"
+              aria-label="Close"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          )}
+          <div>
+            <h1 className="text-[28px] font-bold leading-none tracking-tight">Today</h1>
+            <p className="mt-2 text-[15px] text-muted">{dateLabel}</p>
+          </div>
         </div>
         <StreakRing count={streak} celebrate={celebrate} />
       </div>
@@ -106,8 +118,8 @@ export function Log({ go }: { go: (t: TabKey) => void }) {
               Nothing marked as “using” yet. Turn products on in your Routine to log them here.
             </p>
             <div className="mt-3">
-              <PillButton size="sm" variant="secondary" onClick={() => go('stack')}>
-                Go to Routine
+              <PillButton size="sm" variant="secondary" onClick={() => go('shelf')}>
+                Go to Shelf
               </PillButton>
             </div>
           </div>
@@ -132,7 +144,7 @@ export function Log({ go }: { go: (t: TabKey) => void }) {
             <span className="grid h-6 w-6 place-items-center rounded-full bg-accent text-white">
               <Check size={15} strokeWidth={3} />
             </span>
-            Logged for today · {streak}-day streak
+            Logged for today · {streak}-day streak 🔥
           </div>
         ) : (
           <>

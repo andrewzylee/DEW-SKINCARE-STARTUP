@@ -71,6 +71,7 @@ export interface Product {
   image?: string; // optional real product photo (URL or /public path). Falls back to a
   // monogram tile. You can also just drop files into src/assets/products/<id>.jpg — see
   // src/lib/productImages.ts.
+  custom?: boolean; // community-added on-device (provisional) — behaves like any product
 }
 
 const url = (id: string) => `https://example.com/p/${id}`; // restock stub
@@ -1132,8 +1133,15 @@ export const lookalikeStats: LookalikeStat[] = [
   { productId: 'good-molecules-tranexamic', cohortLabel: 'dark-spots focus', pctSTier: 68 },
 ];
 
+// Runtime registry for community-added products so getProduct resolves them everywhere
+// (product page, shelf, ranking) — the store hydrates this from localStorage on load.
+const customRegistry = new Map<string, Product>();
+export function registerCustomProducts(list: Product[]): void {
+  for (const p of list) customRegistry.set(p.id, p);
+}
+
 export const getProduct = (id: string): Product | undefined =>
-  catalog.find((p) => p.id === id);
+  catalog.find((p) => p.id === id) ?? customRegistry.get(id);
 
 // ---------- DOMAIN & CATEGORY HELPERS ----------
 // Ordered so routines/rankings read top-of-face → base → color, like a shelf.
