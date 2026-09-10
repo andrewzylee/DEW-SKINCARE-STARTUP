@@ -15,6 +15,7 @@ import {
   Music2,
   Share2,
   Sparkles,
+  UserPlus,
 } from 'lucide-react';
 import { useStore, type Account } from '../state/store';
 import { people } from '../data/social';
@@ -43,7 +44,7 @@ export function Profile({
   onOpenLog: () => void;
 }) {
   const { state, streak, rankedShelf, updateAccount, today } = useStore();
-  const { openPost, openFriend, openWrapped, openProduct, openShadeFinder } = useUI();
+  const { openPost, openFriend, openWrapped, openProduct, openShadeFinder, openInvite } = useUI();
   const acct = state.account;
   const fileRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
@@ -162,6 +163,29 @@ export function Profile({
         <PillButton variant="secondary" fullWidth onClick={() => setSharing(true)}>
           Share profile
         </PillButton>
+      </div>
+
+      {/* Invite friends — share your link so friends can join you on Dew */}
+      <div className="mt-4 px-5">
+        <button
+          type="button"
+          onClick={openInvite}
+          className="flex w-full items-center gap-3 rounded-card bg-surface p-4 text-left shadow-card transition-transform active:scale-[0.99]"
+        >
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-soft">
+            <UserPlus size={19} className="text-accent" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+              Invite friends
+            </div>
+            <div className="text-[15px] font-semibold leading-tight">Bring your people to Dew</div>
+            <div className="mt-0.5 text-[12.5px] text-muted">
+              Share your link &amp; rank beauty together
+            </div>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-muted" />
+        </button>
       </div>
 
       {/* Your beauty taste (archetype + domain split) */}

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { cn } from '../lib/cn';
 import { productImage } from '../lib/productImages';
+import { getProduct } from '../data/mockCatalog';
+import { categoryLabel } from './CategoryTag';
 import { GLYPH_SIZE, ProductGlyph, type GlyphSize } from './ProductGlyph';
 
 // A product's photo, with a clean monogram fallback until one is provided. Add photos by
@@ -22,7 +24,16 @@ export function ProductImage({
   const [errored, setErrored] = useState(false);
 
   if (!src || errored) {
-    return <ProductGlyph brand={brand} size={size} className={className} />;
+    const cat = getProduct(id)?.category;
+    return (
+      <ProductGlyph
+        seed={id}
+        brand={brand}
+        category={cat ? categoryLabel(cat) : undefined}
+        size={size}
+        className={className}
+      />
+    );
   }
 
   return (

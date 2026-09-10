@@ -9,6 +9,7 @@ import { ShadeFinderView } from '../components/ShadeFinderView';
 import { BrowseView } from '../components/BrowseView';
 import { TwinsView } from '../components/TwinsView';
 import { AddProductSheet } from '../components/AddProductSheet';
+import { InviteSheet } from '../components/InviteSheet';
 import { WrappedCard } from '../screens/WrappedCard';
 import type { ActivityPost } from '../lib/activity';
 import type { Domain } from '../data/mockCatalog';
@@ -27,6 +28,7 @@ interface UIValue {
   openShadeFinder(): void;
   openBrowse(): void;
   openTwins(): void;
+  openInvite(): void;
   openAddProduct(prefillName?: string, defaultDomain?: Domain): void;
   openWrapped(): void;
 }
@@ -43,6 +45,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [shadeFinderOpen, setShadeFinderOpen] = useState(false);
   const [browseOpen, setBrowseOpen] = useState(false);
   const [twinsOpen, setTwinsOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addPrefill, setAddPrefill] = useState('');
   const [addDomain, setAddDomain] = useState<Domain>('skincare');
@@ -128,11 +131,12 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setAddDomain(defaultDomain);
     setAddOpen(true);
   }, []);
+  const openInvite = useCallback(() => setInviteOpen(true), []);
   const openWrapped = useCallback(() => setWrapped(true), []);
 
   return (
     <UIContext.Provider
-      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openBrowse, openTwins, openAddProduct, openWrapped }}
+      value={{ openProduct, openTrial, openPost, openFriend, openList, openShade, openShadeFinder, openBrowse, openTwins, openInvite, openAddProduct, openWrapped }}
     >
       {children}
       <FeaturedListView listId={listId} onClose={() => setListId(null)} onOpenProduct={openProduct} />
@@ -154,6 +158,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
         onAddProduct={openAddProduct}
       />
       <TwinsView open={twinsOpen} onClose={() => setTwinsOpen(false)} onOpenFriend={openFriend} />
+      <InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <AddProductSheet
         open={addOpen}
         onClose={() => setAddOpen(false)}

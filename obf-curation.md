@@ -1,0 +1,558 @@
+# Open Beauty Facts backfill — curation log
+
+Generated 2026-09-10T15:21:41.237Z.
+
+**Policy:** correctness over coverage. A real photo is used only for an exact brand + exact
+product-name match with exactly one OBF candidate and a verified-live front image. Fragrance is
+skipped. Prestige / luxury / newer products with weak OBF coverage keep their placeholder.
+**Never overwrite manually verified images** — `OBF_IMAGES` is last-resort only.
+
+## Summary
+- Gap products considered: 513
+- ✅ Real photo applied (exact match + **manually eyeballed**): **3**
+- 🔍 Name-matched but held after visual review (wrong variant / unreadable — kept placeholder): 4
+- ⚠️ Ambiguous (multiple OBF candidates, likely different shades — kept placeholder): 2
+- ❌ No confident candidate (kept placeholder): 475
+- 🌸 Fragrance skipped (OBF scent coverage negligible): 29
+- Brand queries that errored (kept placeholder): 3
+
+> The strict exact brand + exact name pass returned only 7 image candidates for the whole 513-product
+> gap — and one of those (La Mer) had a **wrong** photo despite a perfect name match. That is why every
+> candidate was visually verified before use. Net: OBF simply does not cover this prestige / color-
+> cosmetic / K-beauty / indie catalog, so ~99% correctly keep the placeholder.
+
+## ✅ Applied — real photo now shows (each visually verified against the front label)
+- de-lala · Drunk Elephant · Lala Retro Whipped Cream · barcode 2000000151852
+- kiehls-avocado-eye · Kiehl's · Creamy Eye Treatment with Avocado · barcode 3700194714413
+- ilia-limitless-mascara · ILIA · Limitless Lash Mascara · barcode 2000000151846
+
+## ⚠️ Ambiguous — need manual pick (multiple OBF products share the name; likely different shades)
+- kiehls-ultra-cream · Kiehl's · Ultra Facial Cream
+    - candidate: Ultra Facial Cream (barcode 3605970360757)
+    - candidate: Ultra facial cream (barcode 11033661)
+    - candidate: Ultra facial cream (barcode 3605971545672)
+- kiehls-midnight · Kiehl's · Midnight Recovery Concentrate
+    - candidate: midnight recovery concentrate (barcode 0601650079752)
+    - candidate: midnight recovery concentrate (barcode 3605975053920)
+
+## 🔍 Name-matched but HELD after visual review (kept placeholder — recheck manually)
+- id: lamer-treatment-lotion · La Mer · The Treatment Lotion — ❌ WRONG PHOTO (olive-green bottle; real one is white/frosted). Exact name match, wrong image — do not use.
+- id: kiehls-calendula-toner · Kiehl's · Calendula Herbal Extract Toner — dark, blurry user photo, front label unreadable. url: https://images.openbeautyfacts.org/images/products/370/019/471/1719/front_en.3.400.jpg
+- id: glow-watermelon-drops · Glow Recipe · Watermelon Glow Niacinamide Dew Drops — photo shows ingredients side, front not visible. url: https://images.openbeautyfacts.org/images/products/081/005/296/0166/front_en.3.400.jpg
+- id: byoma-gel-cream · BYOMA · Moisturizing Gel-Cream — "BYOMA" visible but specific SKU unconfirmed (looks like a pump bottle, not the gel-cream tub). url: https://images.openbeautyfacts.org/images/products/000/000/618/3981/front_en.3.400.jpg
+
+## ❌ No confident OBF match — curate manually (prestige/luxury/newer/K-beauty mostly)
+- id: 111skin-nacy2 · brand: 111SKIN · name: Y Theorem Repair Serum NAC Y2
+- id: 111skin-blackdiamond · brand: 111SKIN · name: Celestial Black Diamond Cream
+- id: threece-velvet-tint · brand: 3CE · name: Velvet Lip Tint
+- id: threece-mood-palette · brand: 3CE · name: Multi Eye Color Palette
+- id: mua-1005 · brand: Alva · name: Liquid Eye Shadow
+- id: amicole-skin-tint · brand: Ami Colé · name: Skin-Enhancing Tint
+- id: amuse-dew-tint · brand: Amuse · name: Dew Tint
+- id: bader-cream · brand: Augustinus Bader · name: The Cream
+- id: bader-rich-cream · brand: Augustinus Bader · name: The Rich Cream
+- id: bader-serum · brand: Augustinus Bader · name: The Serum
+- id: bader-cleansing-balm · brand: Augustinus Bader · name: The Cleansing Balm
+- id: boj-glow-serum · brand: Beauty of Joseon · name: Glow Deep Serum Rice + Alpha Arbutin
+- id: boj-dynasty-cream · brand: Beauty of Joseon · name: Dynasty Cream
+- id: boj-revive-eye · brand: Beauty of Joseon · name: Revive Eye Serum Ginseng + Retinal
+- id: belif-aqua-bomb · brand: Belif · name: The True Cream Aqua Bomb
+- id: belif-moisturizing-bomb · brand: Belif · name: The True Cream Moisturizing Bomb
+- id: benefit-they-real · brand: Benefit · name: They're Real Magnet Mascara
+- id: mua-644 · brand: Benefit · name: the POREfessional: agent zero shine
+- id: mua-643 · brand: Benefit · name: hello flawless! powder foundation
+- id: mua-641 · brand: Benefit · name: dallas dusty rose face powder
+- id: mua-640 · brand: Benefit · name: rockateur
+- id: mua-639 · brand: Benefit · name: cheekathon bronzer & blush palette
+- id: mua-638 · brand: Benefit · name: hoola matte bronzer travel size mini
+- id: mua-637 · brand: Benefit · name: dew the hoola liquid bronzer
+- id: mua-636 · brand: Benefit · name: hoola matte bronzer
+- id: mua-635 · brand: Benefit · name: high brow glow brow highlighter
+- id: mua-634 · brand: Benefit · name: high brow eyebrow highlighter
+- id: mua-633 · brand: Benefit · name: brow zings eyebrow shaping kit
+- id: mua-632 · brand: Benefit · name: BROWVO! conditioning eyebrow primer
+- id: mua-631 · brand: Benefit · name: precisely, my brow eyebrow pencil
+- id: mua-630 · brand: Benefit · name: ka-BROW! eyebrow cream-gel color
+- id: mua-629 · brand: Benefit · name: goof proof eyebrow pencil
+- id: mua-628 · brand: Benefit · name: gimme brow volumizing eyebrow gel
+- id: mua-627 · brand: Benefit · name: bigger & bolder brows kit
+- id: mua-626 · brand: Benefit · name: defined & refined brows kit
+- id: mua-625 · brand: Benefit · name: soft & natural brows kit
+- id: mua-624 · brand: Benefit · name: hydra-smooth lip color
+- id: mua-623 · brand: Benefit · name: BIG sexy lipstick set
+- id: mua-622 · brand: Benefit · name: ultra plush lip gloss
+- id: mua-621 · brand: Benefit · name: hoola ultra plush
+- id: mua-620 · brand: Benefit · name: CORALista ultra plush
+- id: mua-619 · brand: Benefit · name: rockateur ultra plush
+- id: mua-618 · brand: Benefit · name: hervana ultra plush
+- id: mua-617 · brand: Benefit · name: dandelion ultra plush
+- id: mua-616 · brand: Benefit · name: sugarbomb ultra plush
+- id: mua-615 · brand: Benefit · name: lollibalm
+- id: mua-614 · brand: Benefit · name: chachabalm
+- id: mua-613 · brand: Benefit · name: posiebalm
+- id: mua-612 · brand: Benefit · name: benebalm
+- id: mua-611 · brand: Benefit · name: BADgal waterproof mascara
+- id: mua-610 · brand: Benefit · name: they're real! lengthening mascara mini
+- id: mua-609 · brand: Benefit · name: BADgal lash volumizing mascara
+- id: mua-608 · brand: Benefit · name: roller lash curling mascara
+- id: mua-607 · brand: Benefit · name: they're real! lengthening mascara
+- id: mua-606 · brand: Benefit · name: they're real! tinted eyelash primer
+- id: mua-605 · brand: Benefit · name: BADgal waterproof eyeliner
+- id: mua-604 · brand: Benefit · name: creaseless cream eyeshadow
+- id: mua-603 · brand: Benefit · name: they're real! gel eyeliner pen
+- id: br-p50 · brand: Biologique Recherche · name: Lotion P50
+- id: br-dermo · brand: Biologique Recherche · name: Creme Dermopurifiante
+- id: biossance-vitc-oil · brand: Biossance · name: Squalane + Vitamin C Rose Oil
+- id: biossance-omega-cream · brand: Biossance · name: Squalane + Omega Repair Cream
+- id: biossance-peptide-serum · brand: Biossance · name: Squalane + Copper Peptide Rapid Plumping Serum
+- id: mua-1044 · brand: Boosh · name: Lipstick
+- id: byoma-hydrating-serum · brand: BYOMA · name: Hydrating Serum
+- id: caudalie-vinoperfect-serum · brand: Caudalie · name: Vinoperfect Radiance Serum
+- id: caudalie-vinopure-serum · brand: Caudalie · name: Vinopure Salicylic Acid Serum
+- id: caudalie-beauty-elixir · brand: Caudalie · name: Beauty Elixir Prep, Set, Glow Face Mist
+- id: caudalie-vinosource-cream · brand: Caudalie · name: Vinosource-Hydra S.O.S. Intense Moisturizer
+- id: caudalie-vinoperfect-moist · brand: Caudalie · name: Vinoperfect Instant Brightening Moisturizer
+- id: chanel-sublimage-creme · brand: Chanel · name: Sublimage La Creme
+- id: chanel-n1-serum · brand: Chanel · name: N1 de Chanel Revitalizing Serum
+- id: ctilbury-pillowtalk · brand: Charlotte Tilbury · name: Matte Revolution Pillow Talk
+- id: ctilbury-flawless-filter · brand: Charlotte Tilbury · name: Hollywood Flawless Filter
+- id: ct-magic-cream · brand: Charlotte Tilbury · name: Charlotte's Magic Cream
+- id: ct-magic-serum · brand: Charlotte Tilbury · name: Charlotte's Magic Serum Crystal Elixir
+- id: cdp-la-creme · brand: Cle de Peau Beaute · name: La Creme
+- id: cdp-serum · brand: Cle de Peau Beaute · name: The Serum
+- id: cdp-eye-essence · brand: Cle de Peau Beaute · name: Eye Contour Essence
+- id: mua-846 · brand: Clinique · name: Even Better™ Compact Makeup Broad Spectrum SPF 15
+- id: mua-845 · brand: Clinique · name: Redness Solutions Makeup<BR>Broad Spectrum SPF 15<BR>With Probiotic Technology
+- id: mua-844 · brand: Clinique · name: Stay-Matte Oil-Free Makeup
+- id: mua-843 · brand: Clinique · name: Repairwear Laser Focus™ All-Smooth Makeup Broad Spectrum SPF 15
+- id: mua-842 · brand: Clinique · name: Perfectly Real™ Compact Makeup
+- id: mua-841 · brand: Clinique · name: Chubby in the Nude™ Foundation Stick
+- id: mua-840 · brand: Clinique · name: Super City Block™ BB Cushion Compact Broad Spectrum SPF 50
+- id: mua-839 · brand: Clinique · name: Superpowder Double Face Makeup
+- id: mua-838 · brand: Clinique · name: Perfectly Real™ Makeup
+- id: mua-837 · brand: Clinique · name: Beyond Perfecting™ Powder Foundation + Concealer
+- id: mua-836 · brand: Clinique · name: Acne Solutions™ Liquid Makeup
+- id: mua-835 · brand: Clinique · name: Superbalanced™ Makeup
+- id: mua-834 · brand: Clinique · name: Stay-Matte Sheer Pressed Powder
+- id: mua-833 · brand: Clinique · name: Superbalanced™ Silk Makeup Broad Spectrum SPF 15
+- id: mua-832 · brand: Clinique · name: Even Better™ Makeup Broad Spectrum SPF 15
+- id: mua-831 · brand: Clinique · name: Beyond Perfecting™ Foundation + Concealer
+- id: mua-830 · brand: Clinique · name: CliniqueFIT™ Workout Makeup Broad Spectrum SPF 40
+- id: mua-829 · brand: Clinique · name: Almost Powder Makeup
+- id: mua-828 · brand: Clinique · name: Clinique BIY™ Blend It Yourself Pigment Drops
+- id: mua-827 · brand: Clinique · name: Even Better Glow™ Light Reflecting Makeup Broad Spectrum SPF 15
+- id: mua-826 · brand: Clinique · name: Acne Solutions™ Clearing Concealer
+- id: mua-825 · brand: Clinique · name: Line Smoothing Concealer
+- id: mua-824 · brand: Clinique · name: All About Eyes™ Concealer
+- id: mua-823 · brand: Clinique · name: Advanced Concealer
+- id: mua-822 · brand: Clinique · name: Airbrush Concealer™
+- id: mua-821 · brand: Clinique · name: Continuous Coverage Makeup Broad Spectrum SPF 15
+- id: mua-820 · brand: Clinique · name: Beyond Perfecting™ Super Concealer Camouflage + 24-Hour Wear
+- id: mua-819 · brand: Clinique · name: Moisture Surge™ CC Cream Hydrating Colour Corrector Broad Spectrum SPF 30
+- id: mua-818 · brand: Clinique · name: Acne Solutions BB Cream Broad Spectrum SPF 40
+- id: mua-817 · brand: Clinique · name: Age Defense BB Cream<BR>Broad Spectrum SPF 30
+- id: mua-816 · brand: Clinique · name: Super City Block™ BB Cushion Compact Broad Spectrum SPF 50 Refill
+- id: mua-815 · brand: Clinique · name: Wear Everywhere Neutrals All About Shadow™ 8-Pan Palette
+- id: mua-814 · brand: Clinique · name: Pretty Easy™ Eye Palette
+- id: mua-813 · brand: Clinique · name: All About Shadow™ Primer for Eyes
+- id: mua-812 · brand: Clinique · name: Lid Smoothie™ Antioxidant 8-Hour Eye Colour
+- id: mua-811 · brand: Clinique · name: Touch Base For Eyes™
+- id: mua-810 · brand: Clinique · name: Lid Pop™
+- id: mua-809 · brand: Clinique · name: All About Shadow™ Single
+- id: mua-808 · brand: Clinique · name: Chubby Stick™ Shadow Tint For Eyes
+- id: mua-807 · brand: Clinique · name: All About Shadow™ Quad
+- id: mua-806 · brand: Clinique · name: All About Shadow™ Duo
+- id: mua-805 · brand: Clinique · name: Clinique + Jonathan Adler: Lid Pop
+- id: mua-804 · brand: Clinique · name: Clinique + Jonathan Adler: Limited Edition Chic Colour Kit
+- id: mua-803 · brand: Clinique · name: Cream Shaper™ For Eyes
+- id: mua-802 · brand: Clinique · name: Quickliner™ For Eyes
+- id: mua-801 · brand: Clinique · name: High Impact™ Custom Black Kajal
+- id: mua-800 · brand: Clinique · name: Kohl Shaper For Eyes
+- id: mua-799 · brand: Clinique · name: Quickliner™ For Eyes Intense
+- id: mua-798 · brand: Clinique · name: Brush-On Cream Liner
+- id: mua-797 · brand: Clinique · name: Water-Resistant Eyeliner
+- id: mua-796 · brand: Clinique · name: Clinique Skinny Stick™
+- id: mua-795 · brand: Clinique · name: Pretty Easy™ Liquid Eyelining Pen
+- id: mua-794 · brand: Clinique · name: Instant Lift For Brows
+- id: mua-793 · brand: Clinique · name: Superfine Liner For Brows
+- id: mua-792 · brand: Clinique · name: Pretty Easy Brow Palette
+- id: mua-791 · brand: Clinique · name: Brow Keeper
+- id: mua-790 · brand: Clinique · name: Just Browsing Brush-On Styling Mousse
+- id: mua-789 · brand: Clinique · name: Brow Shaper
+- id: mua-788 · brand: Clinique · name: Chubby Stick™ Sculpting Highlight
+- id: mua-787 · brand: Clinique · name: Chubby Stick™ Sculpting Contour
+- id: mua-786 · brand: Clinique · name: Limited Edition Highlighting Kit
+- id: mua-785 · brand: Clinique · name: Blended Face Powder and Brush
+- id: mua-784 · brand: Clinique · name: Up-lighting™ Liquid Illuminator
+- id: mua-783 · brand: Clinique · name: True Bronze™ Pressed Powder Bronzer
+- id: mua-782 · brand: Clinique · name: Uplighting Illuminating Powder
+- id: mua-781 · brand: Clinique · name: Sun-Kissed Face Gelee Complexion Multitasker
+- id: mua-778 · brand: Clinique · name: Sculptionary™ Cheek Contouring Palette
+- id: mua-777 · brand: Clinique · name: Blushing Blush™ Powder Blush
+- id: mua-776 · brand: Clinique · name: Cheek Pop™
+- id: mua-775 · brand: Clinique · name: Clinique + Jonathan Adler: Cheek Pop
+- id: mua-774 · brand: Clinique · name: Soft-Pressed Powder Blusher
+- id: mua-773 · brand: Clinique · name: Chubby Stick™ Cheek Colour Balm
+- id: mua-771 · brand: Clinique · name: CliniqueFIT™ Lip + Cheek Flush
+- id: mua-770 · brand: Clinique · name: Chubby™ Plump & Shine Liquid Lip Plumping Gloss
+- id: mua-769 · brand: Clinique · name: Quickliner™ For Lips
+- id: mua-768 · brand: Clinique · name: Quickliner™ For Lips Intense
+- id: mua-767 · brand: Clinique · name: Almost Lipstick
+- id: mua-766 · brand: Clinique · name: Butter Shine™ Lipstick
+- id: mua-765 · brand: Clinique · name: High Impact™ Lip Colour
+- id: mua-764 · brand: Clinique · name: Chubby Stick Intense™ Moisturizing Lip Colour Balm
+- id: mua-763 · brand: Clinique · name: Long Last Soft Matte Lipstick
+- id: mua-762 · brand: Clinique · name: Long Last Lipstick
+- id: mua-761 · brand: Clinique · name: Clinique Pop Liquid™ Matte Lip Colour + Primer
+- id: mua-760 · brand: Clinique · name: Chubby Stick Baby Tint™ Moisturizing Lip Colour Balm
+- id: mua-759 · brand: Clinique · name: Clinique + Jonathan Adler: Pop Lip Colour + Primer
+- id: mua-758 · brand: Clinique · name: Different Lipstick
+- id: mua-757 · brand: Clinique · name: Clinique Pop™ Lacquer Lip Colour + Primer
+- id: mua-756 · brand: Clinique · name: Clinique Pop Glaze™ Sheer Lip Colour + Primer
+- id: mua-755 · brand: Clinique · name: Chubby Stick™ Moisturizing Lip Colour Balm
+- id: mua-754 · brand: Clinique · name: Clinique Pop™ Matte Lip Colour + Primer
+- id: mua-753 · brand: Clinique · name: Clinique Pop™ Lip Colour + Primer
+- id: mua-752 · brand: Clinique · name: Clinique Pop™ Lip Shadow Cushion Matte Lip Powder
+- id: clio-kill-cushion · brand: Clio · name: Kill Cover Founwear Cushion
+- id: clio-pro-eye · brand: Clio · name: Pro Eye Palette
+- id: clio-kill-mascara · brand: Clio · name: Kill Lash Superproof Mascara
+- id: mua-1048 · brand: ColourPop · name: Lippie Pencil
+- id: mua-1047 · brand: ColourPop · name: Blotted Lip
+- id: mua-1046 · brand: ColourPop · name: Lippie Stix
+- id: mua-1045 · brand: ColourPop · name: No Filter Foundation
+- id: cosrx-snail-essence · brand: COSRX · name: Advanced Snail 96 Mucin Power Essence
+- id: cosrx-low-ph-cleanser · brand: COSRX · name: Low pH Good Morning Gel Cleanser
+- id: cosrx-snail-eye · brand: COSRX · name: Advanced Snail Peptide Eye Cream
+- id: cosrx-vitc23 · brand: COSRX · name: The Vitamin C 23 Serum
+- id: cosrx-aloe-sun · brand: COSRX · name: Aloe Soothing Sun Cream SPF50+
+- id: dasique-shadow · brand: Dasique · name: Shadow Palette
+- id: dasique-mood-blur · brand: Dasique · name: Mood Blur Tint
+- id: mua-1043 · brand: Deciem · name: Serum Foundation
+- id: mua-1042 · brand: Deciem · name: Coverage Foundation
+- id: dior-lip-glow · brand: Dior · name: Addict Lip Glow Oil
+- id: mua-740 · brand: Dior · name: Junon
+- id: mua-730 · brand: Dior · name: Matte
+- id: mua-729 · brand: Dior · name: Poison Metal
+- id: mua-728 · brand: Dior · name: Jungle Matte
+- id: mua-727 · brand: Dior · name: Miss Satin
+- id: mua-726 · brand: Dior · name: Mineral
+- id: mua-725 · brand: Dior · name: Sauvage
+- id: mua-724 · brand: Dior · name: Diabolo
+- id: mua-723 · brand: Dior · name: Tease
+- id: mua-722 · brand: Dior · name: Precious Rocks
+- id: mua-721 · brand: Dior · name: Amethyst
+- id: mua-720 · brand: Dior · name: Emerald
+- id: mua-718 · brand: Dior · name: Ruby
+- id: mua-717 · brand: Dior · name: All-In-Brow 3D
+- id: mua-716 · brand: Dior · name: Sourcils Poudre
+- id: mua-715 · brand: Dior · name: DIORSHOW BROW STYLER
+- id: mua-714 · brand: Dior · name: DIORSHOW BOLD BROW - Christmas 2017 Limited Edition
+- id: mua-713 · brand: Dior · name: DIORSHOW BOLD BROW
+- id: mua-712 · brand: Dior · name: Diorshow Art Pen
+- id: mua-711 · brand: Dior · name: Diorliner
+- id: mua-710 · brand: Dior · name: Dior Addict It-Line
+- id: mua-709 · brand: Dior · name: Eyeliner Waterproof
+- id: mua-708 · brand: Dior · name: DIORSHOW KHÔL
+- id: mua-707 · brand: Dior · name: Diorshow Pro Liner Waterproof
+- id: mua-706 · brand: Dior · name: Diorshow Iconic
+- id: mua-705 · brand: Dior · name: Diorshow Iconic Overcurl
+- id: mua-704 · brand: Dior · name: Dior Addict It-Lash
+- id: mua-703 · brand: Dior · name: Diorshow New Look
+- id: mua-702 · brand: Dior · name: Diorshow Black Out
+- id: mua-701 · brand: Dior · name: DIORSHOW
+- id: mua-700 · brand: Dior · name: DIORSHOW PUMP'N'VOLUME
+- id: mua-699 · brand: Dior · name: Diorshow Maximizer 3D
+- id: mua-698 · brand: Dior · name: Holiday Diorshow Pump n' Volume Set
+- id: mua-697 · brand: Dior · name: Couture Colour Wardrobe palette
+- id: mua-696 · brand: Dior · name: Colour Design Eye palette
+- id: mua-695 · brand: Dior · name: Eye Reviver
+- id: mua-694 · brand: Dior · name: 5 COULEURS DESIGNER
+- id: mua-693 · brand: Dior · name: 5 COULEURS PRECIOUS ROCKS - Christmas 2017 Limited Edition
+- id: mua-692 · brand: Dior · name: 5 COULEURS
+- id: mua-691 · brand: Dior · name: Diorshow Mono
+- id: mua-689 · brand: Dior · name: Diorshow Fusion Mono
+- id: mua-688 · brand: Dior · name: Backstage Eye Prime
+- id: mua-687 · brand: Dior · name: Diorskin Rosy Glow
+- id: mua-685 · brand: Dior · name: Diorblush Sculpt
+- id: mua-684 · brand: Dior · name: Diorblush
+- id: mua-683 · brand: Dior · name: Diorskin Nude Air Tan
+- id: mua-682 · brand: Dior · name: Diorskin Nude Air Glow Powder
+- id: mua-681 · brand: Dior · name: Diorskin Nude Air loose powder
+- id: mua-680 · brand: Dior · name: Diorskin nude air powder
+- id: mua-679 · brand: Dior · name: DIORIFIC PRECIOUS ROCKS - Christmas 2017 Limited Edition
+- id: mua-678 · brand: Dior · name: Diorskin Forever & Ever Control Loose Powder
+- id: mua-677 · brand: Dior · name: Fix It Colour
+- id: mua-676 · brand: Dior · name: Diorskin Forever Undercover
+- id: mua-675 · brand: Dior · name: FIX IT
+- id: mua-674 · brand: Dior · name: FLASH LUMINIZER
+- id: mua-673 · brand: Dior · name: Dior Addict Lip Maximizer
+- id: mua-672 · brand: Dior · name: Dior Addict Ultra-Gloss
+- id: mua-671 · brand: Dior · name: Cheek & Lip Glow
+- id: mua-670 · brand: Dior · name: DIORIFIC MATTE FLUID - Christmas Look 2017 Limited Edition
+- id: mua-669 · brand: Dior · name: DIORIFIC KHÔL
+- id: mua-668 · brand: Dior · name: Diorific
+- id: mua-667 · brand: Dior · name: Dior Addict Lipstick - Limited Edition
+- id: mua-666 · brand: Dior · name: Dior Addict Lipstick
+- id: mua-665 · brand: Dior · name: DIOR ADDICT LACQUER STICK
+- id: mua-664 · brand: Dior · name: DIOR ADDICT LIP TATTOO
+- id: mua-663 · brand: Dior · name: ROUGE DIOR COLLECTION COUTURE - Christmas Look 2017 Limited Edition
+- id: mua-662 · brand: Dior · name: Dior Holiday Couture Collection
+- id: mua-661 · brand: Dior · name: ROUGE DIOR - Fall 2017 Limited Edition
+- id: mua-660 · brand: Dior · name: Rouge Dior
+- id: mua-659 · brand: Dior · name: Rouge Dior Double Rouge
+- id: mua-658 · brand: Dior · name: Rouge Dior Liquid
+- id: dior-prestige-creme · brand: Dior · name: Prestige La Creme
+- id: dior-capture-serum · brand: Dior · name: Capture Totale Le Serum
+- id: sturm-hyaluronic · brand: Dr. Barbara Sturm · name: Hyaluronic Serum
+- id: sturm-face-cream · brand: Dr. Barbara Sturm · name: Face Cream
+- id: sturm-betterb · brand: Dr. Barbara Sturm · name: The Better B Niacinamide Serum
+- id: ddg-alpha-beta · brand: Dr. Dennis Gross · name: Alpha Beta Universal Daily Peel
+- id: ddg-retinol-ferulic · brand: Dr. Dennis Gross · name: Advanced Retinol + Ferulic Overnight Serum
+- id: ddg-c-collagen · brand: Dr. Dennis Gross · name: C+ Collagen Brighten & Firm Vitamin C Serum
+- id: de-protini · brand: Drunk Elephant · name: Protini Polypeptide Cream
+- id: de-framboos · brand: Drunk Elephant · name: T.L.C. Framboos Glycolic Night Serum
+- id: de-cfirma · brand: Drunk Elephant · name: C-Firma Fresh Day Serum
+- id: elf-halo-blush · brand: e.l.f. · name: Halo Glow Blush Beauty Wand
+- id: espoir-beglow-cushion · brand: Espoir · name: Pro Tailor Be Glow Cushion
+- id: el-anr · brand: Estee Lauder · name: Advanced Night Repair Serum
+- id: el-revitalizing-cream · brand: Estee Lauder · name: Revitalizing Supreme+ Moisturizer
+- id: el-micro-essence · brand: Estee Lauder · name: Micro Essence Treatment Lotion
+- id: etude-dear-darling · brand: Etude · name: Dear Darling Water Gel Tint
+- id: etude-play-color · brand: Etude · name: Play Color Eyes Palette
+- id: farmacy-green-clean · brand: Farmacy · name: Green Clean Makeup Meltaway Cleansing Balm
+- id: farmacy-honeymoon · brand: Farmacy · name: Honeymoon Glow AHA Resurfacing Night Serum
+- id: farmacy-honey-halo · brand: Farmacy · name: Honey Halo Ceramide Moisturizer
+- id: farmacy-deep-sweep · brand: Farmacy · name: Deep Sweep 2% BHA Pore Cleaning Toner
+- id: mua-850 · brand: Fenty · name: MATTEMOISELLE - Plush Matte Lipstick
+- id: mua-849 · brand: Fenty · name: ECLIPSE - 2-in-1 Glitter Release Eyeliner
+- id: mua-848 · brand: Fenty · name: COSMIC GLOSS - Lip Glitter
+- id: mua-847 · brand: Fenty · name: MATCH STIX - Matte Skinstick
+- id: mua-780 · brand: Fenty · name: PRO FILT'R - Soft Matte Longwear Foundation
+- id: fenty-eaze-drop · brand: Fenty Beauty · name: Eaze Drop Blurring Skin Tint
+- id: fab-ultra-repair · brand: First Aid Beauty · name: Ultra Repair Cream Intense Hydration
+- id: fab-radiance-pads · brand: First Aid Beauty · name: Facial Radiance Pads
+- id: fab-face-cleanser · brand: First Aid Beauty · name: Pure Skin Face Cleanser
+- id: fab-vitamin-c · brand: First Aid Beauty · name: FAB Pharma Vitamin C Triple Correction Serum
+- id: fab-hydrating-serum · brand: First Aid Beauty · name: Ultra Repair Hydrating Serum
+- id: fresh-soy · brand: Fresh · name: Soy Face Cleanser
+- id: fresh-rose-cream · brand: Fresh · name: Rose Deep Hydration Face Cream
+- id: fresh-blacktea · brand: Fresh · name: Black Tea Firming Overnight Serum
+- id: mua-1004 · brand: Glossier · name: Stretch Concealer
+- id: mua-1003 · brand: Glossier · name: Cloud Paint
+- id: mua-1002 · brand: Glossier · name: Wowder
+- id: mua-1001 · brand: Glossier · name: Haloscope
+- id: mua-1000 · brand: Glossier · name: Perfecting Skin Tint
+- id: mua-999 · brand: Glossier · name: Generation G
+- id: glow-pha-toner · brand: Glow Recipe · name: Watermelon Glow PHA+BHA Pore-Tight Toner
+- id: glow-plum-plump · brand: Glow Recipe · name: Plum Plump Hyaluronic Serum
+- id: glow-avocado-mask · brand: Glow Recipe · name: Avocado Melt Retinol Sleeping Mask
+- id: glow-watermelon-mist · brand: Glow Recipe · name: Watermelon Glow Ultra-Fine Mist
+- id: glow-guava-c · brand: Glow Recipe · name: Guava Vitamin C Dark Spot Serum
+- id: guerlain-orchidee-serum · brand: Guerlain · name: Orchidee Imperiale The Longevity Concentrate Serum
+- id: guerlain-orchidee-cream · brand: Guerlain · name: Orchidee Imperiale The Rich Cream
+- id: guerlain-abeille-oil · brand: Guerlain · name: Abeille Royale Advanced Youth Watery Oil
+- id: guerlain-abeille-doublr · brand: Guerlain · name: Abeille Royale Double R Renew & Repair Serum
+- id: hera-black-cushion · brand: HERA · name: Black Cushion
+- id: herbivore-lapis-oil · brand: Herbivore · name: Lapis Balancing Facial Oil
+- id: herbivore-pink-cloud · brand: Herbivore · name: Pink Cloud Rosewater Moisture Cream
+- id: herbivore-bakuchiol · brand: Herbivore · name: Bakuchiol Retinol Alternative Serum
+- id: ilia-skin-tint · brand: ILIA · name: Super Serum Skin Tint SPF 40
+- id: ilia-serum-concealer · brand: ILIA · name: True Skin Serum Concealer
+- id: ilia-multistick · brand: ILIA · name: Multi-Stick
+- id: ilia-color-block · brand: ILIA · name: Color Block Lipstick
+- id: innisfree-nosebum · brand: Innisfree · name: No Sebum Blur Powder
+- id: jonesroad-miracle-balm · brand: Jones Road · name: Miracle Balm
+- id: jonesroad-wtf · brand: Jones Road · name: What The Foundation
+- id: jonesroad-face-pencil · brand: Jones Road · name: The Face Pencil
+- id: ks-exfolikate · brand: Kate Somerville · name: ExfoliKate Intensive Exfoliating Treatment
+- id: ks-goatmilk · brand: Kate Somerville · name: Goat Milk Moisturizing Cream
+- id: kiehls-ultra-gel · brand: Kiehl's · name: Ultra Facial Oil-Free Gel Cream
+- id: kiehls-rare-earth · brand: Kiehl's · name: Rare Earth Deep Pore Cleanser
+- id: kiehls-powerful-c · brand: Kiehl's · name: Powerful-Strength Vitamin C Serum
+- id: kiehls-clearly-corrective · brand: Kiehl's · name: Clearly Corrective Dark Spot Solution
+- id: kosas-wet-lip-oil · brand: Kosas · name: Wet Lip Oil Plumping Gloss
+- id: lamer-creme · brand: La Mer · name: Creme de la Mer
+- id: lamer-concentrate · brand: La Mer · name: The Concentrate
+- id: lamer-eye-concentrate · brand: La Mer · name: The Eye Concentrate
+- id: lamer-cleansing-foam · brand: La Mer · name: The Cleansing Foam
+- id: laprairie-skincaviar-cream · brand: La Prairie · name: Skin Caviar Luxe Cream
+- id: laprairie-caviar-lift · brand: La Prairie · name: Skin Caviar Liquid Lift
+- id: laprairie-white-eye · brand: La Prairie · name: White Caviar Eye Extraordinaire
+- id: lancome-genifique · brand: Lancome · name: Advanced Genifique Radiance Serum
+- id: lancome-absolue-cream · brand: Lancome · name: Absolue Soft Cream
+- id: lancome-hcf-serum · brand: Lancome · name: Renergie H.C.F. Triple Serum
+- id: lancome-lash-idole · brand: Lancôme · name: Lash Idôle Mascara
+- id: laneige-water-bank · brand: Laneige · name: Water Bank Blue Hyaluronic Cream
+- id: laneige-water-sleeping · brand: Laneige · name: Water Sleeping Mask
+- id: laneige-cream-skin · brand: Laneige · name: Cream Skin Toner & Moisturizer
+- id: laneige-bouncy-firm · brand: Laneige · name: Bouncy & Firm Sleeping Mask
+- id: laneige-neo-cushion · brand: Laneige · name: Neo Cushion Matte
+- id: merit-flush-balm · brand: Merit · name: Flush Balm Cream Blush
+- id: merit-signature-lip · brand: Merit · name: Signature Lip Lightweight Lipstick
+- id: merit-minimalist · brand: Merit · name: The Minimalist Perfecting Complexion Stick
+- id: merit-solo-shadow · brand: Merit · name: Solo Shadow
+- id: murad-vitac · brand: Murad · name: Vita-C Glycolic Brightening Serum
+- id: murad-spot · brand: Murad · name: Rapid Relief Acne Spot Treatment
+- id: murad-aha-bha · brand: Murad · name: AHA/BHA Exfoliating Cleanser
+- id: nars-radiant-concealer · brand: NARS · name: Radiant Creamy Concealer
+- id: naturium-vitc · brand: Naturium · name: Vitamin C Complex Serum
+- id: naturium-niacinamide · brand: Naturium · name: Niacinamide Serum 12% Plus Zinc 2%
+- id: naturium-peptide-moist · brand: Naturium · name: Multi-Peptide Moisturizer
+- id: olehenriksen-truth-serum · brand: OLEHENRIKSEN · name: Truth Serum Vitamin C Collagen Serum
+- id: olehenriksen-banana-eye · brand: OLEHENRIKSEN · name: Banana Bright+ Eye Creme
+- id: olehenriksen-crush · brand: OLEHENRIKSEN · name: C-Rush Vitamin C Gel Moisturizer
+- id: olehenriksen-dewtopia · brand: OLEHENRIKSEN · name: Dewtopia 20% Acid Night Treatment
+- id: olehenriksen-coldplunge · brand: OLEHENRIKSEN · name: Cold Plunge Pore Mask
+- id: origins-ginzing · brand: Origins · name: GinZing Energy-Boosting Gel Moisturizer
+- id: origins-checks · brand: Origins · name: Checks and Balances Frothy Face Wash
+- id: origins-megamushroom · brand: Origins · name: Dr. Weil Mega-Mushroom Relief & Resilience Cream
+- id: origins-charcoal-mask · brand: Origins · name: Clear Improvement Active Charcoal Mask
+- id: peripera-ink-velvet · brand: Peripera · name: Ink The Velvet Lip Tint
+- id: peripera-ink-airy · brand: Peripera · name: Ink Airy Velvet Tint
+- id: ptr-water-drench · brand: Peter Thomas Roth · name: Water Drench Hyaluronic Cloud Cream
+- id: ptr-potent-c · brand: Peter Thomas Roth · name: Potent-C Power Serum
+- id: ptr-peeling-gel · brand: Peter Thomas Roth · name: FIRMx Peeling Gel
+- id: ren-ready-steady · brand: REN Clean Skincare · name: Ready Steady Glow Daily AHA Tonic
+- id: ren-evercalm · brand: REN Clean Skincare · name: Evercalm Global Protection Day Cream
+- id: rms-uncoverup · brand: RMS Beauty · name: 'Un' Cover-Up Concealer
+- id: rms-lip2cheek · brand: RMS Beauty · name: Lip2Cheek
+- id: romnd-juicy-tint · brand: rom&nd · name: Juicy Lasting Tint
+- id: romnd-zero-velvet · brand: rom&nd · name: Zero Velvet Tint
+- id: romnd-better-eyes · brand: rom&nd · name: Better Than Eyes Palette
+- id: roseinc-skin-enhance · brand: Rose Inc · name: Skin Enhance Tinted Serum
+- id: roseinc-cream-blush · brand: Rose Inc · name: Cream Blush Cheek & Lip Color
+- id: saie-slip-tint · brand: Saie · name: Slip Tint Dewy Tinted Moisturizer
+- id: saie-glowy-gel · brand: Saie · name: Glowy Super Gel Highlighter
+- id: shiseido-ultimune · brand: Shiseido · name: Ultimune Power Infusing Concentrate
+- id: shiseido-benefiance · brand: Shiseido · name: Benefiance Wrinkle Smoothing Cream
+- id: shiseido-sun · brand: Shiseido · name: Ultimate Sun Protector Lotion SPF 50+
+- id: sisley-sisleya-cream · brand: Sisley Paris · name: Sisleya L'Integral Anti-Age Cream
+- id: sisley-blackrose · brand: Sisley Paris · name: Black Rose Skin Infusion Cream
+- id: sisley-supremya · brand: Sisley Paris · name: Supremya At Night
+- id: skii-fte · brand: SK-II · name: Facial Treatment Essence
+- id: skii-genoptics · brand: SK-II · name: GenOptics Aura Essence Serum
+- id: skii-rna-cream · brand: SK-II · name: R.N.A. Power Radical New Age Cream
+- id: skii-clear-lotion · brand: SK-II · name: Facial Treatment Clear Lotion
+- id: skinceuticals-ceferulic · brand: SkinCeuticals · name: C E Ferulic
+- id: skinceuticals-phloretin · brand: SkinCeuticals · name: Phloretin CF
+- id: skinceuticals-triplelipid · brand: SkinCeuticals · name: Triple Lipid Restore 2:4:2
+- id: skinceuticals-b5 · brand: SkinCeuticals · name: Hydrating B5 Gel
+- id: mua-560 · brand: Smashbox · name: Bronze Lights
+- id: mua-559 · brand: Smashbox · name: O-Glow
+- id: mua-558 · brand: Smashbox · name: Baked Fusion Soft Lights
+- id: mua-557 · brand: Smashbox · name: L.A. Lights Palette
+- id: mua-556 · brand: Smashbox · name: Brow Tech Highlight Stick
+- id: mua-555 · brand: Smashbox · name: Brow Tech Gloss Stick
+- id: mua-554 · brand: Smashbox · name: Brow Tech Matte Pencil
+- id: mua-553 · brand: Smashbox · name: Brow Tech Shaping Powder
+- id: mua-552 · brand: Smashbox · name: Brow Tech To Go
+- id: mua-551 · brand: Smashbox · name: 24 Hour CC Spot Concealer
+- id: mua-550 · brand: Smashbox · name: Camera Ready BB Cream Eyes SPF 15
+- id: mua-549 · brand: Smashbox · name: Photo Filter Foundation
+- id: mua-548 · brand: Smashbox · name: Halo Hydrating Powder
+- id: mua-547 · brand: Smashbox · name: Halo HD Foundation SPF 15
+- id: mua-546 · brand: Smashbox · name: Camera Ready CC Cream
+- id: mua-545 · brand: Smashbox · name: Camera Ready BB Cream SPF 35
+- id: mua-544 · brand: Smashbox · name: Camera Ready BB Water SPF 30
+- id: mua-543 · brand: Smashbox · name: STUDIO SKIN 15 HOUR WEAR HYDRATING FOUNDATION
+- id: mua-542 · brand: Smashbox · name: Hyperlash Mascara
+- id: mua-541 · brand: Smashbox · name: Full Exposure Waterproof Mascara
+- id: mua-540 · brand: Smashbox · name: Full Exposure Mascara
+- id: mua-539 · brand: Smashbox · name: Indecent Exposure Mascara
+- id: mua-538 · brand: Smashbox · name: X-Rated Mascara
+- id: mua-537 · brand: Smashbox · name: Photo Finish Lash Primer
+- id: mua-536 · brand: Smashbox · name: Jet Set Waterproof Eye Liner
+- id: mua-535 · brand: Smashbox · name: Photo Angle Gel Liner
+- id: mua-534 · brand: Smashbox · name: Limitless Eye Liner
+- id: mua-533 · brand: Smashbox · name: Limitless Liquid Liner
+- id: mua-532 · brand: Smashbox · name: Always Sharp 3D Liner
+- id: mua-531 · brand: Smashbox · name: Always Sharp Waterproof Kohl Liner
+- id: mua-530 · brand: Smashbox · name: Double Exposure Palette
+- id: mua-529 · brand: Smashbox · name: #ShapeMatters Palette
+- id: mua-528 · brand: Smashbox · name: Mini Full Exposure Palette
+- id: mua-527 · brand: Smashbox · name: Full Exposure Palette
+- id: mua-526 · brand: Smashbox · name: Photo Matte Eyes Mini
+- id: mua-525 · brand: Smashbox · name: Photo Matte Eyes
+- id: mua-524 · brand: Smashbox · name: MATTE EXPOSURE PALETTE
+- id: mua-523 · brand: Smashbox · name: Eye Shadow Trio
+- id: mua-522 · brand: Smashbox · name: PHOTO OP EYE SHADOW SINGLES
+- id: mua-521 · brand: Smashbox · name: BE LEGENDARY LONG-WEAR LIP LACQUER
+- id: mua-520 · brand: Smashbox · name: L.A. Lights Cheek & Lip Color
+- id: mua-519 · brand: Smashbox · name: Always Sharp Lip Liner
+- id: mua-518 · brand: Smashbox · name: Insta-Matte Lipstick Transformer
+- id: mua-517 · brand: Smashbox · name: BE LEGENDARY LIPSTICK × FOSTER SISTERS
+- id: mua-516 · brand: Smashbox · name: Be Legendary Lipstick
+- id: mua-515 · brand: Smashbox · name: ALWAYS ON LIQUID LIPSTICK
+- id: sf-jetlag-mask · brand: Summer Fridays · name: Jet Lag Mask
+- id: sf-ccme · brand: Summer Fridays · name: CC Me Vitamin C Serum
+- id: sf-cloud-dew · brand: Summer Fridays · name: Cloud Dew Oil-Free Gel Cream
+- id: sr-goodgenes · brand: Sunday Riley · name: Good Genes Lactic Acid Treatment
+- id: sr-luna · brand: Sunday Riley · name: Luna Sleeping Night Oil
+- id: sr-ceo · brand: Sunday Riley · name: C.E.O. 15% Vitamin C Brightening Serum
+- id: sr-aplus · brand: Sunday Riley · name: A+ High-Dose Retinoid Serum
+- id: th-cleanser · brand: Tata Harper · name: Regenerating Cleanser
+- id: th-rejuv-serum · brand: Tata Harper · name: Rejuvenating Serum
+- id: th-waterlock · brand: Tata Harper · name: Water-Lock Moisturizer
+- id: tatcha-dewy-cream · brand: Tatcha · name: The Dewy Skin Cream
+- id: tatcha-rice-wash · brand: Tatcha · name: The Rice Wash
+- id: tatcha-essence · brand: Tatcha · name: The Essence Plumping Treatment
+- id: tatcha-violetc · brand: Tatcha · name: Violet-C Radiance Serum
+- id: inkey-ha · brand: The INKEY List · name: Hyaluronic Acid Serum
+- id: inkey-niacinamide · brand: The INKEY List · name: Niacinamide Serum
+- id: inkey-oat-balm · brand: The INKEY List · name: Oat Cleansing Balm
+- id: inkey-vitc · brand: The INKEY List · name: 15% Vitamin C and EGF Serum
+- id: tirtir-red-cushion · brand: TIRTIR · name: Mask Fit Red Cushion
+- id: topicals-faded · brand: Topicals · name: Faded Serum for Dark Spots & Scars
+- id: topicals-like-butter · brand: Topicals · name: Like Butter Hydrating Mask
+- id: tower28-beachplease · brand: Tower28 · name: BeachPlease Cream Blush
+- id: tower28-shineon · brand: Tower28 · name: ShineOn Lip Jelly
+- id: tower28-mascara · brand: Tower28 · name: MakeWaves Lengthening Mascara
+- id: versed-dew-point · brand: Versed · name: Dew Point Moisturizing Gel-Cream
+- id: versed-resurfacing-mask · brand: Versed · name: Doctor's Visit Instant Resurfacing Mask
+- id: versed-antioxidant-serum · brand: Versed · name: Sunday Morning Antioxidant Serum
+- id: westman-vital-skin · brand: Westman Atelier · name: Vital Skin Foundation Stick
+- id: westman-baby-cheeks · brand: Westman Atelier · name: Baby Cheeks Blush Stick
+- id: ytp-superfood-cleanser · brand: Youth To The People · name: Superfood Antioxidant Cleanser
+- id: ytp-airwhip · brand: Youth To The People · name: Superfood Air-Whip Moisture Cream
+- id: ytp-vitamin-c · brand: Youth To The People · name: 15% Vitamin C + Clean Caffeine Serum
+- id: ytp-adaptogen · brand: Youth To The People · name: Adaptogen Deep Moisture Cream
+- id: ytp-aha-toner · brand: Youth To The People · name: Kombucha + 11% AHA Exfoliation Power Toner
+
+## 🌸 Fragrance (intentionally skipped)
+- id: azzaro-most-wanted · brand: Azzaro · name: The Most Wanted
+- id: burberry-hero · brand: Burberry · name: Hero
+- id: byredo-gypsy-water · brand: Byredo · name: Gypsy Water
+- id: ch-bad-boy · brand: Carolina Herrera · name: Bad Boy
+- id: ch-good-girl · brand: Carolina Herrera · name: Good Girl
+- id: chanel-allure-sport · brand: Chanel · name: Allure Homme Sport
+- id: creed-git · brand: Creed · name: Green Irish Tweed
+- id: dior-homme-intense · brand: Dior · name: Dior Homme Intense
+- id: diptyque-philosykos · brand: Diptyque · name: Philosykos
+- id: dg-the-one · brand: Dolce&Gabbana · name: The One for Men
+- id: armani-code · brand: Giorgio Armani · name: Armani Code
+- id: armani-si · brand: Giorgio Armani · name: Sì
+- id: gucci-bloom · brand: Gucci · name: Bloom
+- id: kilian-angels-share · brand: Kilian · name: Angels' Share
+- id: lancome-lviebelle · brand: Lancôme · name: La Vie Est Belle
+- id: mj-daisy · brand: Marc Jacobs · name: Daisy
+- id: mugler-angel · brand: Mugler · name: Angel
+- id: pr-invictus · brand: Paco Rabanne · name: Invictus
+- id: pr-lady-million · brand: Paco Rabanne · name: Lady Million
+- id: pdm-delina · brand: Parfums de Marly · name: Delina
+- id: pdm-herod · brand: Parfums de Marly · name: Herod
+- id: prada-lhomme · brand: Prada · name: L'Homme
+- id: prada-luna-carbon · brand: Prada · name: Luna Rossa Carbon
+- id: tf-oud-wood · brand: Tom Ford · name: Oud Wood
+- id: tf-lost-cherry · brand: Tom Ford · name: Lost Cherry
+- id: versace-dylan-blue · brand: Versace · name: Dylan Blue
+- id: vr-flowerbomb · brand: Viktor&Rolf · name: Flowerbomb
+- id: xerjoff-naxos · brand: Xerjoff · name: Naxos
+- id: ysl-y-edp · brand: Yves Saint Laurent · name: Y Eau de Parfum
+
+## Brand query errors
+- Dior: Unexpected token '<', "<html>
+<h"... is not valid JSON
+- Charlotte Tilbury: Unexpected token '<', "<html>
+<h"... is not valid JSON
+- Youth To The People: Unexpected token '<', "<html>
+<h"... is not valid JSON

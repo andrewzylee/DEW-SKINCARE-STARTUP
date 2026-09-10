@@ -72,6 +72,7 @@ export const friendShelves: Record<string, string[]> = {
   priya: [
     'ilia-limitless-lash',
     'kosas-revealer',
+    'differin-adapalene',
     'rhode-peptide-lip',
     'vanicream-cleanser',
     'lrp-toleriane-moist',
@@ -152,7 +153,7 @@ export const feed: FeedActivity[] = [
     productId: 'cerave-foaming-cleanser',
     tier: 'S',
     standout: 'Cut my oil without the tight, squeaky feeling.',
-    likes: 2,
+    likes: 1243,
     timeAgo: '2 minutes ago',
     withNames: ['Theo', 'Me'],
   },
@@ -162,7 +163,7 @@ export const feed: FeedActivity[] = [
     productId: 'differin-adapalene',
     tier: 'S',
     note: 'Slow start, but it cleared my forehead in about 3 weeks.',
-    likes: 8,
+    likes: 842,
     timeAgo: '1 hour ago',
   },
   {
@@ -171,7 +172,7 @@ export const feed: FeedActivity[] = [
     productId: 'boj-relief-sun',
     tier: 'A',
     note: 'No white cast, feels like nothing. Wear it daily now.',
-    likes: 5,
+    likes: 512,
     timeAgo: '4 hours ago',
   },
   {
@@ -180,7 +181,7 @@ export const feed: FeedActivity[] = [
     productId: 'ordinary-niacinamide',
     tier: 'B',
     note: 'Helped the shine a bit — not magic, but for $6 I keep it around.',
-    likes: 12,
+    likes: 1876,
     timeAgo: '12 hours ago',
   },
   {
@@ -189,7 +190,7 @@ export const feed: FeedActivity[] = [
     productId: 'paulas-choice-bha',
     tier: 'S',
     standout: 'Smoothed the bumps on my nose in a week.',
-    likes: 21,
+    likes: 964,
     timeAgo: 'Yesterday',
   },
 ];

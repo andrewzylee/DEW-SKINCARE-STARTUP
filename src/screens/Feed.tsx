@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bell,
+  Bookmark,
   Calendar,
   ChevronRight,
+  Crown,
   Heart,
   Menu,
   MessageCircle,
@@ -19,6 +21,7 @@ import { catalog, getProduct, lookalikeStats, type Product } from '../data/mockC
 import {
   featuredLists,
   feed as feedData,
+  friendShelves,
   getPerson,
   people,
   rankMoves,
@@ -27,7 +30,7 @@ import {
   type FeedActivity,
 } from '../data/social';
 import { feedToPost } from '../lib/activity';
-import { tasteItemsFromRanked, tasteMatchWithFriend, type TasteItem } from '../lib/taste';
+import { friendRankedShelf, tasteItemsFromRanked, tasteMatchWithFriend, type TasteItem } from '../lib/taste';
 import { useStore } from '../state/store';
 import { useUI } from '../state/ui';
 import { INTEREST_META, type UserProfile } from '../data/quiz';
@@ -36,15 +39,57 @@ import { cn } from '../lib/cn';
 import { listContainer, listItem, spring } from '../lib/motion';
 import { Avatar } from '../components/Avatar';
 import { ProductImage } from '../components/ProductImage';
-import { CategoryTag, categoryLabel, categoryPlural } from '../components/CategoryTag';
+import { CategoryTag, categoryLabel } from '../components/CategoryTag';
 
 type View = 'foryou' | 'trending' | 'friends';
+type FeedTab = 'foryou' | 'following';
 
 const CHIPS: { key: View; label: string; icon: typeof Sparkles }[] = [
   { key: 'foryou', label: 'For You', icon: Sparkles },
   { key: 'trending', label: 'Trending', icon: TrendingUp },
   { key: 'friends', label: 'Friend recs', icon: Users },
 ];
+
+// A few curated display tags for the skincare heroes that appear in the feed (kept out of the
+// Product model + taste algorithm on purpose — these are purely for the card's benefit chips).
+const FEED_TAGS: Record<string, string[]> = {
+  'cerave-foaming-cleanser': ['Gentle', 'Non-drying', 'For oily skin'],
+  'differin-adapalene': ['Acne', 'Texture', 'Derm-loved'],
+  'boj-relief-sun': ['No white cast', 'Lightweight'],
+  'ordinary-niacinamide': ['Budget', 'Oil control'],
+  'paulas-choice-bha': ['Smoothing', 'Cult'],
+};
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const tagsFor = (p: Product): string[] => FEED_TAGS[p.id] ?? (p.styleTags ?? []).slice(0, 3).map(cap);
+const fmtCount = (n: number): string =>
+  n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : String(n);
+
+// Normalized card model — one shape for ranking posts, friends' rank moves, and your own moves,
+// so the feed renders as a single consistent card type.
+interface CardData {
+  key: string;
+  mins: number;
+  isMe: boolean;
+  personId?: string;
+  name: string;
+  tint?: string;
+  avatar?: string;
+  productId: string;
+  verb: string;
+  rankPos?: number;
+  rankTotal?: number;
+  isTop?: boolean;
+  grade?: Tier; // secondary metadata (rating), rank is primary
+  deltaText?: string; // secondary metadata for moves (↑ from #3 / New)
+  quote?: string;
+  timeAgo: string;
+  baseLikes: number;
+  likeId: string;
+  commentId?: string;
+  activity?: FeedActivity; // present on posts → opens the full post
+  matchPct?: number;
+  faces?: { name: string; tint?: string }[];
+}
 
 function cohortFor(profile: UserProfile | null): string {
   if (!profile) return 'oily & acne-prone';
@@ -65,6 +110,7 @@ export function Feed({
   const { state, rankedShelf } = useStore();
   const { openProduct, openFriend, openShade, openBrowse, openTwins } = useUI();
   const [view, setView] = useState<View>('foryou');
+  const [feedTab, setFeedTab] = useState<FeedTab>('foryou');
   const [q, setQ] = useState('');
 
   const myTaste = useMemo(() => tasteItemsFromRanked(rankedShelf), [rankedShelf]);
@@ -94,20 +140,15 @@ export function Feed({
       .slice(0, 12);
   }, [q, state.customProducts]);
 
-  const feed = useMemo(() => {
-    if (view === 'trending') return [...feedData].sort((a, b) => b.likes - a.likes);
-    return feedData;
-  }, [view]);
-
   const cohort = cohortFor(state.profile);
   const lookalike = useMemo(
     () => lookalikeStats.filter((s) => s.cohortLabel === cohort).sort((a, b) => b.pctSTier - a.pctSTier).slice(0, 4),
     [cohort],
   );
 
-  // One unified feed: friends' posts + friends' ranking moves + your own moves, interleaved by
-  // recency. (Replaces the separate "Latest moves" strip — it's all one stream now.)
-  const mergedFeed = useMemo(() => {
+  // One unified feed of rich cards: friends' ranking posts + friends' rank moves + (For You) your
+  // own moves, interleaved by recency. "Following" drops your own activity — friends only.
+  const entries = useMemo<CardData[]>(() => {
     const parseMins = (s: string): number => {
       const m = s.match(/(\d+)\s*(m|min|h|hour|d|day|w|week)/i);
       if (!m) return 99999;
@@ -115,44 +156,94 @@ export function Feed({
       const u = m[2][0].toLowerCase();
       return u === 'm' ? n : u === 'h' ? n * 60 : u === 'd' ? n * 1440 : n * 10080;
     };
-    const myMoves: MoveItem[] = state.rankEvents.slice(0, 3).map((e) => ({
-      id: e.id,
-      isMe: true,
-      name: state.account.displayName,
-      avatar: state.account.avatar,
-      productId: e.productId,
-      fromRank: e.fromRank,
-      toRank: e.toRank,
-      groupSize: e.groupSize,
-      reason: e.reason,
-      timeAgo: relTime(e.ts),
-    }));
-    const friendMoves: MoveItem[] = rankMoves.map((m) => {
-      const person = getPerson(m.personId);
+    const rankInfo = (pid: string, productId: string) => {
+      const rl = friendRankedShelf(pid).find((r) => r.productId === productId);
+      return rl ? { pos: rl.groupRank, total: rl.groupSize } : null;
+    };
+    const facesFor = (pid: string, productId: string) =>
+      people
+        .filter((pp) => pp.id !== pid && (friendShelves[pp.id] ?? []).includes(productId))
+        .slice(0, 3)
+        .map((pp) => ({ name: pp.name, tint: pp.tint }));
+
+    const posts: CardData[] = feedData.map((a) => {
+      const person = getPerson(a.personId);
+      const ri = rankInfo(a.personId, a.productId);
       return {
-        id: m.id,
+        key: `p-${a.id}`,
+        mins: parseMins(a.timeAgo),
+        isMe: false,
+        personId: a.personId,
+        name: person?.name ?? 'Someone',
+        tint: person?.tint,
+        productId: a.productId,
+        verb: 'ranked a product',
+        rankPos: ri?.pos,
+        rankTotal: ri?.total,
+        isTop: ri?.pos === 1,
+        grade: a.tier,
+        quote: a.standout ?? a.note,
+        timeAgo: a.timeAgo,
+        baseLikes: a.likes,
+        likeId: a.id,
+        commentId: a.id,
+        activity: a,
+        matchPct: tasteMatchWithFriend(myTaste, a.personId).score,
+        faces: facesFor(a.personId, a.productId),
+      };
+    });
+
+    const friendMoves: CardData[] = rankMoves.map((m) => {
+      const person = getPerson(m.personId);
+      const isNew = m.fromRank == null;
+      const up = !isNew && m.toRank < (m.fromRank as number);
+      return {
+        key: `fm-${m.id}`,
+        mins: parseMins(m.timeAgo),
         isMe: false,
         personId: m.personId,
         name: person?.name ?? 'Someone',
         tint: person?.tint,
         productId: m.productId,
-        fromRank: m.fromRank,
-        toRank: m.toRank,
-        groupSize: m.groupSize,
-        reason: m.reason,
+        verb: isNew ? (m.toRank === 1 ? 'ranked a new #1' : 'ranked a product') : up ? 'moved a pick up' : 're-ranked a product',
+        rankPos: m.toRank,
+        rankTotal: m.groupSize,
+        isTop: m.toRank === 1,
+        deltaText: isNew ? 'New' : up ? `↑ from #${m.fromRank}` : `↓ from #${m.fromRank}`,
+        quote: m.reason,
         timeAgo: m.timeAgo,
+        baseLikes: 0,
+        likeId: m.id,
+        matchPct: tasteMatchWithFriend(myTaste, m.personId).score,
+        faces: facesFor(m.personId, m.productId),
       };
     });
-    type Entry =
-      | { key: string; mins: number; kind: 'post'; post: FeedActivity }
-      | { key: string; mins: number; kind: 'move'; move: MoveItem };
-    const entries: Entry[] = [
-      ...feed.map((p) => ({ key: `p-${p.id}`, mins: parseMins(p.timeAgo), kind: 'post' as const, post: p })),
-      ...myMoves.map((m) => ({ key: `mm-${m.id}`, mins: parseMins(m.timeAgo), kind: 'move' as const, move: m })),
-      ...friendMoves.map((m) => ({ key: `fm-${m.id}`, mins: parseMins(m.timeAgo), kind: 'move' as const, move: m })),
-    ];
-    return entries.sort((a, b) => a.mins - b.mins);
-  }, [feed, state.rankEvents, state.account]);
+
+    const myMoves: CardData[] = state.rankEvents.slice(0, 3).map((e) => {
+      const isNew = e.fromRank == null;
+      const up = !isNew && e.toRank < (e.fromRank as number);
+      return {
+        key: `mm-${e.id}`,
+        mins: Math.floor(Math.max(0, Date.now() - e.ts) / 60000),
+        isMe: true,
+        name: state.account.displayName,
+        avatar: state.account.avatar,
+        productId: e.productId,
+        verb: isNew ? 'ranked a product' : up ? 'moved a pick up' : 're-ranked a product',
+        rankPos: e.toRank,
+        rankTotal: e.groupSize,
+        isTop: e.toRank === 1,
+        deltaText: isNew ? 'New' : up ? `↑ from #${e.fromRank}` : `↓ from #${e.fromRank}`,
+        quote: e.reason,
+        timeAgo: relTime(e.ts),
+        baseLikes: 0,
+        likeId: e.id,
+      };
+    });
+
+    const all = feedTab === 'following' ? [...posts, ...friendMoves] : [...posts, ...friendMoves, ...myMoves];
+    return all.sort((a, b) => a.mins - b.mins);
+  }, [state.rankEvents, state.account, feedTab, myTaste]);
 
   return (
     <div className="pb-8">
@@ -330,24 +421,57 @@ export function Feed({
               </div>
             </div>
           )}
-
         </>
       )}
 
       {mode === 'feed' && (
-        <div className="mt-6 px-5">
-          <h2 className="mb-2 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
-            Your feed
-          </h2>
-          <motion.div variants={listContainer} initial="initial" animate="animate" className="flex flex-col">
-            {mergedFeed.map((entry) =>
-              entry.kind === 'post' ? (
-                <FeedCard key={entry.key} item={entry.post} />
-              ) : (
-                <MoveRow key={entry.key} m={entry.move} onProduct={openProduct} onFriend={openFriend} />
-              ),
-            )}
-          </motion.div>
+        <div className="mt-4">
+          {/* For You | Following — a real social toggle instead of a static header */}
+          <div className="px-5">
+            <div className="flex rounded-full bg-ink/[0.05] p-1 text-[14px] font-semibold">
+              {(['foryou', 'following'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setFeedTab(t)}
+                  className={cn(
+                    'flex-1 rounded-full py-2 transition-colors',
+                    feedTab === t ? 'bg-surface text-ink shadow-card' : 'text-muted',
+                  )}
+                >
+                  {t === 'foryou' ? 'For You' : 'Following'}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2 rounded-full bg-ink/[0.05] px-4">
+              <Search size={17} className="text-muted" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search products, brands, concerns…"
+                className="w-full bg-transparent py-2.5 text-[15px] outline-none placeholder:text-muted"
+              />
+              <button type="button" onClick={openBrowse} aria-label="Browse all products">
+                <SlidersHorizontal size={17} className="text-muted" />
+              </button>
+            </div>
+          </div>
+
+          {q.trim() ? (
+            <SearchResults results={results} owned={owned} query={q} />
+          ) : (
+            <motion.div
+              key={feedTab}
+              variants={listContainer}
+              initial="initial"
+              animate="animate"
+              className="mt-4 flex flex-col gap-3 px-5"
+            >
+              {entries.map((d) => (
+                <FeedEntryCard key={d.key} d={d} />
+              ))}
+            </motion.div>
+          )}
         </div>
       )}
     </div>
@@ -422,90 +546,125 @@ function relTime(ts: number): string {
   return `${Math.floor(s / 86400)}d`;
 }
 
-interface MoveItem {
-  id: string;
-  isMe: boolean;
-  personId?: string;
-  name: string;
-  tint?: string;
-  avatar?: string;
-  productId: string;
-  fromRank: number | null;
-  toRank: number;
-  groupSize: number;
-  reason?: string;
-  timeAgo: string;
-}
-
-function MoveRow({
-  m,
-  onProduct,
-  onFriend,
-}: {
-  m: MoveItem;
-  onProduct: (id: string) => void;
-  onFriend: (id: string) => void;
-}) {
-  const product = getProduct(m.productId);
-  if (!product) return null;
-  const first = m.isMe ? 'You' : m.name.split(' ')[0];
-  const action = m.fromRank == null ? 'ranked' : m.toRank < m.fromRank ? 'moved up' : 'dropped';
+// One consistent rank-first badge: rank position (with a crown for a #1), category as context.
+function RankBadge({ pos, label, top }: { pos?: number; label?: string; top?: boolean }) {
+  if (!pos || !label) return null;
   return (
-    <div className="border-t border-line py-3.5 first:border-t-0">
-      <div className="flex items-start gap-3">
-        {m.isMe || !m.personId ? (
-          <Avatar name={m.name} src={m.avatar} tint={m.tint} size="md" />
-        ) : (
-          <button type="button" onClick={() => onFriend(m.personId!)} aria-label={m.name}>
-            <Avatar name={m.name} tint={m.tint} size="md" />
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => onProduct(m.productId)}
-          className="min-w-0 flex-1 text-left"
-        >
-          <p className="text-[14.5px] leading-snug">
-            <span className="font-semibold">{first}</span> {action}{' '}
-            <span className="font-semibold">{product.name}</span>
-          </p>
-          <p className="num text-[12.5px] text-muted">
-            #{m.toRank} of {m.groupSize} {categoryPlural(product.category)}
-          </p>
-          {m.reason && <p className="mt-0.5 text-[13px] leading-snug text-ink/80">“{m.reason}”</p>}
-          <p className="num mt-1 text-[11.5px] text-muted">{m.timeAgo}</p>
-        </button>
-        <MoveBadge from={m.fromRank} to={m.toRank} />
-      </div>
-    </div>
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-bg px-2.5 py-1 text-[12px] font-semibold text-ink">
+      {top && <Crown size={12} className="text-tier-s" />}#{pos} {label}
+    </span>
   );
 }
 
-function MoveBadge({ from, to }: { from: number | null; to: number }) {
-  let color = 'rgb(var(--muted))';
-  let label = 'NEW';
-  if (from == null) {
-    color = to === 1 ? 'rgb(var(--tier-s))' : 'rgb(var(--muted))';
-    label = 'NEW';
-  } else if (to < from) {
-    color = 'rgb(var(--accent))';
-    label = `↑${from - to}`;
-  } else {
-    color = 'rgb(var(--tier-f))';
-    label = `↓${to - from}`;
-  }
+function FeedEntryCard({ d }: { d: CardData }) {
+  const { openFriend, openProduct, openPost } = useUI();
+  const { state, toggleLikePost } = useStore();
+  const product = getProduct(d.productId);
+  if (!product) return null;
+  const liked = state.likedPosts.includes(d.likeId);
+  const likeCount = d.baseLikes + (liked ? 1 : 0);
+  const commentCount = d.commentId
+    ? (seedComments[d.commentId]?.length ?? 0) + (state.postComments[d.commentId]?.length ?? 0)
+    : 0;
+  const open = () => (d.activity ? openPost(feedToPost(d.activity)) : openProduct(d.productId));
+  const first = d.isMe ? 'You' : d.name.split(' ')[0];
+  const tags = tagsFor(product);
+
   return (
-    <div className="flex shrink-0 flex-col items-center gap-1 pt-0.5">
-      <span className="num text-[20px] font-bold leading-none" style={{ color }}>
-        #{to}
-      </span>
-      <span
-        className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[10.5px] font-bold"
-        style={{ color }}
-      >
-        {label}
-      </span>
-    </div>
+    <motion.div variants={listItem} transition={spring} className="rounded-[20px] bg-surface p-3.5 shadow-card">
+      {/* Header: small avatar + who/verb, rank badge on the right */}
+      <div className="flex items-center gap-2.5">
+        {d.isMe || !d.personId ? (
+          <Avatar name={d.name} src={d.avatar} tint={d.tint} size="sm" />
+        ) : (
+          <button type="button" onClick={() => openFriend(d.personId!)} aria-label={d.name}>
+            <Avatar name={d.name} tint={d.tint} size="sm" />
+          </button>
+        )}
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className="truncate text-[13.5px] text-ink">
+            <span className="font-semibold">{first}</span>
+            <span className="text-muted"> {d.verb}</span>
+          </div>
+          <div className="num text-[11.5px] text-muted">{d.timeAgo}</div>
+        </div>
+        <RankBadge pos={d.rankPos} label={categoryLabel(product.category)} top={d.isTop} />
+      </div>
+
+      {/* Body: the product is the hero — large image + name carry the weight */}
+      <button type="button" onClick={open} className="mt-3 flex w-full gap-3 text-left">
+        <ProductImage
+          id={product.id}
+          brand={product.brand}
+          name={product.name}
+          size="lg"
+          className="!h-[116px] !w-[88px] !rounded-[14px]"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[12px] font-medium text-muted">{product.brand}</div>
+          <div className="line-clamp-2 text-[16.5px] font-semibold leading-snug text-ink">{product.name}</div>
+          <div className="mt-0.5 text-[12px] text-muted">
+            {categoryLabel(product.category)}
+            {d.grade && (
+              <>
+                {' · '}
+                <span className="font-semibold" style={{ color: tierVar(d.grade) }}>
+                  {d.grade}-tier
+                </span>
+              </>
+            )}
+            {d.deltaText && <>{' · '}<span className="font-medium">{d.deltaText}</span></>}
+          </div>
+          {d.quote && (
+            <p className="mt-1.5 line-clamp-3 text-[13.5px] italic leading-snug text-ink">“{d.quote}”</p>
+          )}
+        </div>
+      </button>
+
+      {/* Benefit tags */}
+      {tags.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {tags.map((t, i) => (
+            <span
+              key={t}
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[11.5px] font-medium',
+                i === tags.length - 1 ? 'bg-accent-soft text-accent-ink' : 'bg-ink/[0.05] text-muted',
+              )}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Actions + social proof */}
+      <div className="mt-3 flex items-center gap-4">
+        <button type="button" onClick={() => toggleLikePost(d.likeId)} className="flex items-center gap-1.5" aria-label="Like">
+          <Heart size={18} className={liked ? 'text-tier-f' : 'text-ink'} fill={liked ? 'currentColor' : 'none'} />
+          {likeCount > 0 && <span className="num text-[12.5px] text-muted">{fmtCount(likeCount)}</span>}
+        </button>
+        <button type="button" onClick={open} className="flex items-center gap-1.5 text-ink" aria-label="Comments">
+          <MessageCircle size={18} />
+          {commentCount > 0 && <span className="num text-[12.5px] text-muted">{commentCount}</span>}
+        </button>
+        <Send size={17} className="text-ink" />
+        <Bookmark size={17} className="text-ink" />
+        {d.matchPct != null && (
+          <button type="button" onClick={open} className="ml-auto flex items-center gap-1.5">
+            {d.faces && d.faces.length > 0 && (
+              <div className="flex -space-x-1.5">
+                {d.faces.map((f, i) => (
+                  <Avatar key={i} name={f.name} tint={f.tint} size="xs" className="!h-5 !w-5 !text-[8px] ring-2 ring-surface" />
+                ))}
+              </div>
+            )}
+            <span className="num text-[12.5px] font-semibold text-accent">{d.matchPct}% match</span>
+            <ChevronRight size={14} className="text-muted" />
+          </button>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
@@ -598,87 +757,5 @@ function FeaturedCard({ list, owned }: { list: FeaturedList; owned: Set<string> 
         </div>
       </div>
     </button>
-  );
-}
-
-function TierCircle({ tier }: { tier: Tier }) {
-  return (
-    <span
-      className="num grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 text-[15px] font-bold"
-      style={{ borderColor: tierVar(tier), color: tierVar(tier) }}
-    >
-      {tier}
-    </span>
-  );
-}
-
-function FeedCard({ item }: { item: (typeof feedData)[number] }) {
-  const person = getPerson(item.personId);
-  const product = getProduct(item.productId);
-  const { openPost, openFriend } = useUI();
-  const { state, toggleLikePost } = useStore();
-  if (!person || !product) return null;
-  const post = feedToPost(item);
-  const liked = state.likedPosts.includes(item.id);
-  const likeCount = item.likes + (liked ? 1 : 0);
-  const commentCount =
-    (seedComments[item.id]?.length ?? 0) + (state.postComments[item.id]?.length ?? 0);
-
-  return (
-    <motion.div variants={listItem} transition={spring} className="border-t border-line py-4 first:border-t-0">
-      <div className="flex items-start gap-3">
-        <button type="button" onClick={() => openFriend(item.personId)} aria-label={`View ${person.name}`}>
-          <Avatar name={person.name} tint={person.tint} size="md" />
-        </button>
-        <button type="button" onClick={() => openPost(post)} className="min-w-0 flex-1 text-left">
-          <p className="text-[15px] leading-snug">
-            <span className="font-semibold">{person.name.split(' ')[0]}</span> ranked{' '}
-            <span className="font-semibold">{product.name}</span>
-          </p>
-          {item.withNames && item.withNames.length > 0 && (
-            <p className="text-[13px] text-muted">with {item.withNames.join(', ')}</p>
-          )}
-          <p className="mt-0.5 text-[12.5px] text-muted">
-            {product.brand} · {categoryLabel(product.category)}
-          </p>
-        </button>
-        <TierCircle tier={item.tier} />
-      </div>
-
-      {(item.standout || item.note) && (
-        <button
-          type="button"
-          onClick={() => openPost(post)}
-          className="mt-2.5 block w-full text-left text-[14px] leading-snug"
-        >
-          <span className="font-semibold">{item.standout ? 'Standout: ' : 'Notes: '}</span>
-          {item.standout ?? item.note}
-        </button>
-      )}
-
-      <div className="mt-2.5 flex items-center gap-4">
-        <span className="num text-[12.5px] text-muted">{likeCount} likes</span>
-        <div className="flex items-center gap-4 text-ink">
-          <button type="button" onClick={() => toggleLikePost(item.id)} aria-label="Like">
-            <Heart
-              size={19}
-              className={cn(liked ? 'text-tier-f' : 'text-ink')}
-              fill={liked ? 'currentColor' : 'none'}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={() => openPost(post)}
-            aria-label="Comments"
-            className="flex items-center gap-1"
-          >
-            <MessageCircle size={19} />
-            {commentCount > 0 && <span className="num text-[12px] text-muted">{commentCount}</span>}
-          </button>
-          <Send size={18} />
-        </div>
-        <span className="ml-auto text-[11.5px] text-muted">{item.timeAgo}</span>
-      </div>
-    </motion.div>
   );
 }
