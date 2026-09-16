@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Bell, Bookmark, Calendar, ChevronRight, Crown, Heart, Menu, MessageCircle, Search, Send } from 'lucide-react-native';
@@ -34,6 +34,7 @@ const parseMins = (s: string): number => {
 
 interface CardData {
   key: string;
+  postId: string;
   personId: string;
   name: string;
   tint?: string;
@@ -66,6 +67,7 @@ function buildEntries(): CardData[] {
     const pos = rankOf(a.personId, a.productId);
     return {
       key: `p-${a.id}`,
+      postId: a.id,
       personId: a.personId,
       name: person?.name ?? 'Someone',
       tint: person?.tint,
@@ -88,6 +90,7 @@ function buildEntries(): CardData[] {
     const up = !isNew && m.toRank < (m.fromRank as number);
     return {
       key: `m-${m.id}`,
+      postId: m.id,
       personId: m.personId,
       name: person?.name ?? 'Someone',
       tint: person?.tint,
@@ -124,14 +127,18 @@ export default function FeedScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(5) }}>
           <Text style={{ fontSize: 26, fontWeight: '700', color: palette.ink, letterSpacing: -0.5 }}>Dew</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(4) }}>
-            <Calendar size={20} color={palette.muted} />
-            <View>
+            <Pressable onPress={() => router.push('/calendar')} hitSlop={8}>
+              <Calendar size={20} color={palette.muted} />
+            </Pressable>
+            <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
               <Bell size={21} color={palette.muted} />
               <View style={{ position: 'absolute', top: -5, right: -5, backgroundColor: palette.tierF, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
                 <Text style={{ color: palette.white, fontSize: 9, fontWeight: '700' }}>1</Text>
               </View>
-            </View>
-            <Menu size={22} color={palette.muted} />
+            </Pressable>
+            <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
+              <Menu size={22} color={palette.muted} />
+            </Pressable>
           </View>
         </View>
 
@@ -188,11 +195,16 @@ function RankBadge({ pos, label, top }: { pos?: number; label?: string; top?: bo
 function FeedCard({ d }: { d: CardData }) {
   const router = useRouter();
   const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
   const product = getProduct(d.productId);
   if (!product) return null;
   const first = d.name.split(' ')[0];
   const likeCount = d.baseLikes + (liked ? 1 : 0);
   const tags = tagsFor(product);
+  const openPost = () => router.push({ pathname: '/post/[id]', params: { id: d.postId } });
+  const share = () => {
+    Share.share({ message: `${product.name} by ${product.brand} — ranked on Dew` }).catch(() => {});
+  };
 
   return (
     <View style={{ backgroundColor: palette.surface, borderRadius: radius.lg, padding: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 }}>
@@ -246,11 +258,17 @@ function FeedCard({ d }: { d: CardData }) {
           <Heart size={18} color={liked ? palette.tierF : palette.ink} fill={liked ? palette.tierF : 'transparent'} />
           {likeCount > 0 ? <Text style={{ fontSize: 12.5, color: palette.muted }}>{fmtCount(likeCount)}</Text> : null}
         </Pressable>
-        <MessageCircle size={18} color={palette.ink} />
-        <Send size={17} color={palette.ink} />
-        <Bookmark size={17} color={palette.ink} />
+        <Pressable onPress={openPost} hitSlop={8}>
+          <MessageCircle size={18} color={palette.ink} />
+        </Pressable>
+        <Pressable onPress={share} hitSlop={8}>
+          <Send size={17} color={palette.ink} />
+        </Pressable>
+        <Pressable onPress={() => setSaved((v) => !v)} hitSlop={8}>
+          <Bookmark size={17} color={saved ? palette.accent : palette.ink} fill={saved ? palette.accent : 'transparent'} />
+        </Pressable>
         <View style={{ flex: 1 }} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Pressable onPress={openPost} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {d.faces.length > 0 ? (
             <View style={{ flexDirection: 'row' }}>
               {d.faces.map((f, i) => (
@@ -262,7 +280,7 @@ function FeedCard({ d }: { d: CardData }) {
           ) : null}
           <Text style={{ fontSize: 12.5, fontWeight: '700', color: palette.accent }}>{d.matchPct}% match</Text>
           <ChevronRight size={14} color={palette.muted} />
-        </View>
+        </Pressable>
       </View>
     </View>
   );

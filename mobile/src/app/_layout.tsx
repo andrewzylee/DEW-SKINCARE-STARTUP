@@ -48,6 +48,10 @@ function RootNavigator() {
       <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
       <Stack.Screen name="log" options={{ presentation: 'modal' }} />
       <Stack.Screen name="add-product" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="calendar" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="people" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="post/[id]" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

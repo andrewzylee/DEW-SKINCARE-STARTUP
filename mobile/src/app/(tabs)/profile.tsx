@@ -101,11 +101,11 @@ export default function ProfileScreen() {
 
           {/* Stats */}
           <View style={{ marginTop: space(5), flexDirection: 'row', alignItems: 'stretch' }}>
-            <Stat label="Followers" value={DEMO.followers} />
+            <Stat label="Followers" value={DEMO.followers} onPress={() => router.push({ pathname: '/people', params: { type: 'followers', count: String(DEMO.followers) } })} />
             <View style={{ width: 1, backgroundColor: palette.line, marginVertical: 4 }} />
-            <Stat label="Following" value={DEMO.following} />
+            <Stat label="Following" value={DEMO.following} onPress={() => router.push({ pathname: '/people', params: { type: 'following', count: String(DEMO.following) } })} />
             <View style={{ width: 1, backgroundColor: palette.line, marginVertical: 4 }} />
-            <Stat label="Day streak" value={DEMO.streak} />
+            <Stat label="Day streak" value={DEMO.streak} onPress={() => router.push('/calendar')} />
           </View>
 
           {/* Actions */}
@@ -248,12 +248,12 @@ function Pill({ text, bg, color }: { text: string; bg: string; color: string }) 
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, onPress }: { label: string; value: number; onPress?: () => void }) {
   return (
-    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }}>
+    <Pressable onPress={onPress} disabled={!onPress} style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }}>
       <Text style={{ fontSize: 20, fontWeight: '800', color: palette.ink }}>{value}</Text>
       <Text style={{ marginTop: 3, fontSize: 12, color: palette.muted }}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
