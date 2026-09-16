@@ -71,11 +71,11 @@ export default function Shade() {
           </View>
         </View>
 
-        {/* People with your skin */}
+        {/* People with your skin — wrapping row (few fans; avoids nested horizontal scroll) */}
         {result.fans.length > 0 ? (
-          <View style={{ marginTop: space(5) }}>
-            <Text style={{ paddingHorizontal: space(5), fontSize: 13, fontWeight: '800', color: palette.muted, letterSpacing: 1.2, textTransform: 'uppercase' }}>People with your skin</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: space(5), paddingTop: space(3), paddingBottom: 4 }}>
+          <View style={{ marginTop: space(5), paddingHorizontal: space(5) }}>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, letterSpacing: 1.2, textTransform: 'uppercase' }}>People with your skin</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: space(3) }}>
               {result.fans.map((p) => (
                 <Pressable key={p.id} onPress={() => router.push({ pathname: '/person/[id]', params: { id: p.id } })} style={{ width: 64, alignItems: 'center' }}>
                   <Avatar name={p.name} tint={p.tint} size={56} />
@@ -85,7 +85,7 @@ export default function Shade() {
                   ) : null}
                 </Pressable>
               ))}
-            </ScrollView>
+            </View>
           </View>
         ) : null}
 
