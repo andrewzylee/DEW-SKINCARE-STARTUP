@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -20,6 +20,16 @@ export default function Invite() {
     await Clipboard.setStringAsync(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
+  };
+
+  // The primary button used to just copy — open the real share sheet, falling back to the
+  // clipboard if the platform can't share (web without navigator.share).
+  const share = async () => {
+    try {
+      await Share.share({ message: `Rank beauty with me on Dew — ${link}` });
+    } catch {
+      await copy();
+    }
   };
 
   return (
@@ -45,7 +55,7 @@ export default function Invite() {
         <Text style={{ fontSize: 13, fontWeight: '700', color: copied ? palette.accent : palette.muted }}>{copied ? 'Copied' : 'Copy'}</Text>
       </Pressable>
 
-      <Pressable onPress={copy} style={{ marginTop: space(4), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: palette.accent, borderRadius: radius.pill, paddingVertical: 15 }}>
+      <Pressable onPress={share} style={{ marginTop: space(4), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: palette.accent, borderRadius: radius.pill, paddingVertical: 15 }}>
         <Send size={16} color={palette.white} />
         <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>Share invite link</Text>
       </Pressable>

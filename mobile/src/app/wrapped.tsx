@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
@@ -66,7 +66,16 @@ export default function Wrapped() {
             </View>
           ) : null}
 
-          <Text style={{ marginTop: space(6), textAlign: 'center', fontSize: 13, color: sub }}>Tap to share your Wrapped (coming soon).</Text>
+          <Pressable
+            onPress={() =>
+              Share.share({
+                message: `My Dew Wrapped: I'm a ${archetype}${topProduct ? `, and my #1 of the year is ${topProduct.brand} ${topProduct.name}` : ''}.`,
+              }).catch(() => {})
+            }
+            style={({ pressed }) => ({ marginTop: space(6), alignSelf: 'center', borderRadius: radius.pill, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', paddingHorizontal: 20, paddingVertical: 11, opacity: pressed ? 0.6 : 1 })}
+          >
+            <Text style={{ textAlign: 'center', fontSize: 14, fontWeight: '700', color: palette.white }}>Share your Wrapped</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

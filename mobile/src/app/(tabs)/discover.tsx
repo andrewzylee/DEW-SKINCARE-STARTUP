@@ -8,15 +8,44 @@ import { Avatar } from '@/components/Avatar';
 import { ProductImage } from '@/components/ProductImage';
 import { catalog, categoryLabel, getProduct } from '@/core/catalog';
 import { featuredLists, lookalikeStats } from '@/core/discovery';
-import { myShelf, people } from '@/core/social';
+import { GOAL_ADJECTIVE, type Concern } from '@/core/quiz';
+import { friendShelves, myShelf, people } from '@/core/social';
 import { tasteItemsFromIds, tasteMatchWithFriend } from '@/core/taste';
 import { palette, radius, space } from '@/core/theme';
 import type { Product } from '@/core/types';
+import { useProfile } from '@/data/profile-store';
 
 const myTaste = tasteItemsFromIds(myShelf);
 const twins = people
   .map((p) => ({ p, m: tasteMatchWithFriend(myTaste, p.id) }))
   .sort((a, b) => b.m.score - a.m.score);
+
+// Trending: how many people in the graph have it on a shelf. Real signal from the sample data
+// rather than a curated list, so the tab shows something For You doesn't.
+const TRENDING = (() => {
+  const counts = new Map<string, number>();
+  Object.values(friendShelves).forEach((ids) => ids.forEach((id) => counts.set(id, (counts.get(id) ?? 0) + 1)));
+  return [...counts.entries()]
+    .filter(([, n]) => n > 1)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([productId, shelves]) => ({ productId, shelves }));
+})();
+
+// Friend recs: top-3 picks from your closest taste twins that you haven't ranked yet.
+const FRIEND_RECS = (() => {
+  const mine = new Set(myShelf);
+  const seen = new Set<string>();
+  const out: { productId: string; person: (typeof people)[number]; score: number }[] = [];
+  twins.slice(0, 4).forEach(({ p, m }) => {
+    (friendShelves[p.id] ?? []).slice(0, 3).forEach((productId) => {
+      if (mine.has(productId) || seen.has(productId)) return;
+      seen.add(productId);
+      out.push({ productId, person: p, score: m.score });
+    });
+  });
+  return out.slice(0, 8);
+})();
 
 const CHIPS = [
   { key: 'foryou', label: 'For You', Icon: Sparkles },
@@ -29,6 +58,14 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const [q, setQ] = useState('');
   const [view, setView] = useState<'foryou' | 'trending' | 'friends'>('foryou');
+  const { skinProfile } = useProfile();
+
+  // Describe the cohort from the user's own quiz answers instead of a fixed "oily & acne-prone".
+  const cohortLabel = useMemo(() => {
+    const goal = skinProfile?.goal as Concern | null | undefined;
+    const parts = [skinProfile?.skin_type, goal ? GOAL_ADJECTIVE[goal] : null].filter(Boolean);
+    return parts.length ? parts.join(' & ') : 'skin like yours';
+  }, [skinProfile]);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -143,12 +180,72 @@ export default function DiscoverScreen() {
               </ScrollView>
             </View>
 
+            {/* Trending — most-shelved across the graph */}
+            {view === 'trending' ? (
+              <View style={{ paddingTop: space(6), paddingHorizontal: space(5) }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Trending on Dew</Text>
+                <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4, marginBottom: space(2) }}>Most-shelved products right now.</Text>
+                <View style={{ gap: 8 }}>
+                  {TRENDING.map(({ productId, shelves }) => {
+                    const p = getProduct(productId);
+                    if (!p) return null;
+                    return (
+                      <Pressable key={productId} onPress={() => router.push({ pathname: '/product/[id]', params: { id: p.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 18, padding: 10, borderWidth: 1, borderColor: palette.line }}>
+                        <ProductImage id={p.id} brand={p.brand} image={p.image} width={44} height={44} radius={12} />
+                        <View style={{ flex: 1 }}>
+                          <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
+                          <Text numberOfLines={1} style={{ fontSize: 12.5, color: palette.muted }}>{p.brand}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <TrendingUp size={13} color={palette.accent} />
+                          <Text style={{ fontSize: 12.5, fontWeight: '700', color: palette.accent }}>{shelves} shelves</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+
+            {/* Friend recs — top picks from your closest taste twins that you haven't ranked */}
+            {view === 'friends' ? (
+              <View style={{ paddingTop: space(6), paddingHorizontal: space(5) }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>From your taste twins</Text>
+                <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4, marginBottom: space(2) }}>Top picks from the people who rank like you — that you haven&apos;t ranked yet.</Text>
+                {FRIEND_RECS.length === 0 ? (
+                  <Text style={{ fontSize: 13.5, color: palette.muted, lineHeight: 20, paddingTop: space(2) }}>
+                    You&apos;ve already ranked everything your taste twins have. Rank more to widen the net.
+                  </Text>
+                ) : (
+                  <View style={{ gap: 8 }}>
+                    {FRIEND_RECS.map(({ productId, person, score }) => {
+                      const p = getProduct(productId);
+                      if (!p) return null;
+                      return (
+                        <Pressable key={productId} onPress={() => router.push({ pathname: '/product/[id]', params: { id: p.id } })} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 18, padding: 10, borderWidth: 1, borderColor: palette.line }}>
+                          <ProductImage id={p.id} brand={p.brand} image={p.image} width={44} height={44} radius={12} />
+                          <View style={{ flex: 1 }}>
+                            <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
+                            <Text numberOfLines={1} style={{ fontSize: 12.5, color: palette.muted }}>{p.brand}</Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Avatar name={person.name} tint={person.tint} size={28} />
+                            <Text style={{ fontSize: 10.5, fontWeight: '700', color: palette.muted, marginTop: 3 }}>{score}%</Text>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            ) : null}
+
             {/* Works for skin like yours */}
             {view === 'foryou' ? (
               <View style={{ paddingTop: space(6), paddingHorizontal: space(5) }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Works for skin like yours</Text>
                 <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4, marginBottom: space(2) }}>
-                  Share of people with <Text style={{ fontWeight: '600', color: palette.ink }}>oily & acne-prone</Text> skin who rank each S-tier.
+                  Share of people with <Text style={{ fontWeight: '600', color: palette.ink }}>{cohortLabel}</Text> skin who rank each S-tier.
                 </Text>
                 <View style={{ gap: 8 }}>
                   {lookalikeStats.map((s) => {
@@ -205,15 +302,19 @@ function SearchResults({ results, query }: { results: Product[]; query: string }
           <Text style={{ fontSize: 10.5, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>{categoryLabel(p.category)}</Text>
         </Pressable>
       ))}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, borderWidth: 1, borderColor: palette.line, borderStyle: 'dashed', padding: 12 }}>
+      <Pressable
+        onPress={() => router.push({ pathname: '/add-product', params: { name: query.trim() } })}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, borderWidth: 1, borderColor: palette.line, borderStyle: 'dashed', padding: 12, backgroundColor: pressed ? palette.accentSoft : 'transparent' })}
+      >
         <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: palette.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
           <Plus size={18} color={palette.accent} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 14.5, fontWeight: '700', color: palette.ink }}>{results.length ? 'Not seeing it?' : `Add “${query.trim()}”`}</Text>
-          <Text style={{ fontSize: 12.5, color: palette.muted }}>Add a product — just a photo + name</Text>
+          <Text style={{ fontSize: 12.5, color: palette.muted }}>Add a product — name, brand & category</Text>
         </View>
-      </View>
+        <ChevronRight size={18} color={palette.muted} />
+      </Pressable>
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 
 import { categoriesForDomain, categoryLabel, registerCustomProduct } from '@/core/catalog';
@@ -13,7 +13,9 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(
 export default function AddProduct() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [name, setName] = useState('');
+  // Prefilled when you arrive from a Discover search that found nothing.
+  const { name: initialName } = useLocalSearchParams<{ name?: string }>();
+  const [name, setName] = useState(initialName ?? '');
   const [brand, setBrand] = useState('');
   const [domain, setDomain] = useState<Domain>('skincare');
   const [category, setCategory] = useState<Category>('cleanser');

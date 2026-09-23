@@ -29,6 +29,18 @@ export interface ProfileRow {
   onboarded: boolean;
 }
 
+export interface SkinProfileRow {
+  user_id: string;
+  skin_type: string | null;
+  tone: string | null;
+  undertone: string | null;
+  goal: string | null;
+  interests: string[];
+  avoid: string[];
+  budget: string | null;
+  depth: string | null;
+}
+
 export interface RankingRow {
   id: string;
   user_id: string;

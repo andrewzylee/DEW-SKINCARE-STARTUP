@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,15 +10,37 @@ import { categoryLabel } from '@/core/catalog';
 import { shadeMatch, TONE_LABEL, TONES, UNDERTONE_LABEL, UNDERTONES } from '@/core/shade';
 import { palette, radius, space } from '@/core/theme';
 import type { Tone, Undertone } from '@/core/types';
+import { useProfile } from '@/data/profile-store';
 
 // Shade Match — the acquisition wedge. Set your tone + undertone (works with zero social graph),
 // get shade-aware picks for color makeup, and see people with your skin. Ported from the web
-// reference (src/components/ShadeMatchView.tsx). Seeds from the demo skin profile so picks render.
+// reference (src/components/ShadeMatchView.tsx). Seeds from the skin profile the onboarding quiz
+// saved; changing a chip here writes back, so this screen is the editor for that data.
 export default function Shade() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [tone, setTone] = useState<Tone | undefined>('medium');
-  const [undertone, setUndertone] = useState<Undertone | undefined>('neutral');
+  const { skinProfile, updateSkinProfile } = useProfile();
+  const [tone, setTone] = useState<Tone | undefined>();
+  const [undertone, setUndertone] = useState<Undertone | undefined>();
+  const [edited, setEdited] = useState(false);
+
+  // The profile loads async; adopt it once, unless the user has already changed something here.
+  useEffect(() => {
+    if (edited || !skinProfile) return;
+    setTone((skinProfile.tone as Tone | null) ?? undefined);
+    setUndertone((skinProfile.undertone as Undertone | null) ?? undefined);
+  }, [skinProfile, edited]);
+
+  const pickTone = (t: Tone) => {
+    setEdited(true);
+    setTone(t);
+    updateSkinProfile({ tone: t });
+  };
+  const pickUndertone = (u: Undertone) => {
+    setEdited(true);
+    setUndertone(u);
+    updateSkinProfile({ undertone: u });
+  };
 
   const result = useMemo(() => shadeMatch(tone, undertone), [tone, undertone]);
 
@@ -52,14 +74,14 @@ export default function Shade() {
             <Text style={{ marginTop: 10, fontSize: 12.5, fontWeight: '700', color: palette.ink }}>Tone</Text>
             <View style={{ marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {TONES.map((t) => (
-                <Chip key={t} on={tone === t} onPress={() => setTone(t)} label={TONE_LABEL[t]} />
+                <Chip key={t} on={tone === t} onPress={() => pickTone(t)} label={TONE_LABEL[t]} />
               ))}
             </View>
 
             <Text style={{ marginTop: 12, fontSize: 12.5, fontWeight: '700', color: palette.ink }}>Undertone</Text>
             <View style={{ marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {UNDERTONES.map((u) => (
-                <Chip key={u} on={undertone === u} onPress={() => setUndertone(u)} label={UNDERTONE_LABEL[u]} />
+                <Chip key={u} on={undertone === u} onPress={() => pickUndertone(u)} label={UNDERTONE_LABEL[u]} />
               ))}
             </View>
 

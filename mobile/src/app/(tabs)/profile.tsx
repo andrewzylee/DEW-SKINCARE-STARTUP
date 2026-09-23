@@ -36,8 +36,14 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signOut, isDemo } = useAuth();
-  const { profile } = useProfile();
+  const { profile, skinProfile } = useProfile();
   const { shelf } = useMyShelf();
+
+  // Built from the onboarding quiz answers rather than hardcoded, so it reflects this user.
+  const skinSummary = useMemo(() => {
+    const parts = [skinProfile?.skin_type, skinProfile?.tone, skinProfile?.undertone].filter(Boolean) as string[];
+    return parts.length ? parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' · ') : null;
+  }, [skinProfile]);
 
   const archetype = useMemo(() => archetypeOf(tasteItemsFromIds(shelf)), [shelf]);
   const counts = useMemo(() => {
@@ -58,6 +64,8 @@ export default function ProfileScreen() {
   const routineCount = new Set([...routineAM, ...routinePM]).size;
   const name = profile?.display_name ?? 'You';
   const handle = profile?.handle ?? 'you';
+  const bio = profile?.bio?.trim() ?? '';
+  const location = profile?.location?.trim() ?? '';
   const memberSince = formatMonth(profile?.member_since);
   const recent = shelf.slice(0, 3);
 
@@ -76,12 +84,12 @@ export default function ProfileScreen() {
 
           {/* Identity */}
           <View style={{ alignItems: 'center', paddingTop: space(3) }}>
-            <View>
+            <Pressable onPress={() => router.push('/edit-profile')}>
               <Avatar name={name} src={profile?.avatar_url} size={96} />
               <View style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: palette.bg }}>
                 <Camera size={14} color={palette.white} />
               </View>
-            </View>
+            </Pressable>
             <Text style={{ marginTop: space(3), fontSize: 16, fontWeight: '700', color: palette.ink }}>@{handle}</Text>
             <Text style={{ marginTop: 2, fontSize: 12.5, color: palette.muted }}>Member since {memberSince}</Text>
             {isDemo ? (
@@ -89,13 +97,20 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 11.5, fontWeight: '700', color: palette.accentInk }}>DEMO MODE</Text>
               </View>
             ) : null}
-            <Text style={{ marginTop: space(2), fontSize: 13, fontWeight: '500', color: palette.accent }}>+ Add a bio</Text>
+            {/* A saved bio was never rendered — show it, and keep the prompt only when it's empty. */}
+            <Pressable onPress={() => router.push('/edit-profile')} style={{ marginTop: space(2), paddingHorizontal: space(4) }}>
+              {bio ? (
+                <Text style={{ fontSize: 13.5, lineHeight: 19, color: palette.ink, textAlign: 'center' }}>{bio}</Text>
+              ) : (
+                <Text style={{ fontSize: 13, fontWeight: '500', color: palette.accent }}>+ Add a bio</Text>
+              )}
+            </Pressable>
+            {location ? (
+              <Text style={{ marginTop: 4, fontSize: 12.5, color: palette.muted }}>{location}</Text>
+            ) : null}
             <View style={{ marginTop: space(3), flexDirection: 'row', gap: 8 }}>
-              {[AtSign, Globe].map((Icon, i) => (
-                <View key={i} style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: palette.line, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon size={17} color={palette.muted} />
-                </View>
-              ))}
+              <IconButton Icon={AtSign} onPress={() => router.push('/share-profile')} />
+              <IconButton Icon={Globe} onPress={() => router.push('/invite')} />
             </View>
           </View>
 
@@ -136,8 +151,10 @@ export default function ProfileScreen() {
             <IconCircle Icon={Droplet} bg={palette.makeupSoft} color={palette.makeupInk} />
             <View style={{ flex: 1 }}>
               <Text style={eyebrowStyle}>Skin profile</Text>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: palette.ink, marginTop: 2 }}>Combination · Medium · Neutral</Text>
-              <Text style={{ fontSize: 12.5, color: palette.muted, marginTop: 1 }}>Find your foundation & concealer match</Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: palette.ink, marginTop: 2 }}>{skinSummary ?? 'Not set yet'}</Text>
+              <Text style={{ fontSize: 12.5, color: palette.muted, marginTop: 1 }}>
+                {skinSummary ? 'Find your foundation & concealer match' : 'Set your tone & undertone to match shades'}
+              </Text>
             </View>
             <ChevronRight size={18} color={palette.muted} />
           </Pressable>
@@ -236,6 +253,18 @@ function Card({ icon: Icon, eyebrow, title, sub, onPress }: { icon: LucideIcon; 
         <Text style={{ fontSize: 12.5, color: palette.muted, marginTop: 1 }}>{sub}</Text>
       </View>
       <ChevronRight size={18} color={palette.muted} />
+    </Pressable>
+  );
+}
+
+function IconButton({ Icon, onPress }: { Icon: LucideIcon; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: palette.line, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}
+    >
+      <Icon size={17} color={palette.muted} />
     </Pressable>
   );
 }

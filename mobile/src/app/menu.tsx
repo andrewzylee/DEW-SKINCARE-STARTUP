@@ -1,6 +1,6 @@
 import { Alert, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Bell, ChevronRight, Info, LogOut, Pencil, Shield, X, type LucideIcon } from 'lucide-react-native';
 
 import { useAuth } from '@/core/auth';
@@ -20,7 +20,11 @@ export default function Menu() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signOut, isDemo } = useAuth();
-  const soon = (label: string) => Alert.alert(label, 'Coming soon.');
+  // Settings opens over the tabs, so dismiss it before pushing a sibling route.
+  const go = (path: Href) => {
+    router.back();
+    router.push(path);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top + space(3), paddingHorizontal: space(5) }}>
@@ -30,9 +34,9 @@ export default function Menu() {
       </View>
 
       <View style={{ marginTop: space(4), backgroundColor: palette.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: palette.line, overflow: 'hidden' }}>
-        <Row icon={Pencil} label="Edit profile" onPress={() => { router.back(); router.push('/edit-profile'); }} />
-        <Row icon={Bell} label="Notifications" onPress={() => soon('Notifications')} border />
-        <Row icon={Shield} label="Privacy & data" onPress={() => soon('Privacy & data')} border />
+        <Row icon={Pencil} label="Edit profile" onPress={() => go('/edit-profile')} />
+        <Row icon={Bell} label="Notifications" onPress={() => go('/notifications')} border />
+        <Row icon={Shield} label="Privacy & data" onPress={() => go('/privacy')} border />
         <Row icon={Info} label="About Dew" onPress={() => Alert.alert('Dew', 'Beli for Beauty — rank what you love, see what your people trust.')} border />
       </View>
 

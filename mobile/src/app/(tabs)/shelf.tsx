@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, FlaskConical, Plus, Search, Sun, Trash2, X } from 'lucide-react-native';
 
 import { CompareCard } from '@/components/CompareCard';
@@ -18,8 +19,8 @@ import {
   tierColor,
   type CompareSession,
 } from '@/core/ranking';
-import { routineAM, routinePM, sampleTrials } from '@/core/shelfData';
-import { useMyShelf } from '@/data/hooks';
+import { routineAM, routinePM } from '@/core/shelfData';
+import { useMyShelf, useTrials } from '@/data/hooks';
 import { rankedFromIds } from '@/core/taste';
 import { palette, radius, space } from '@/core/theme';
 import type { Category, Domain, Reaction } from '@/core/types';
@@ -57,9 +58,20 @@ interface Flow {
 export default function ShelfScreen() {
   const insets = useSafeAreaInsets();
   const { shelf, applyOrder, remove } = useMyShelf();
+  const { trials, startTrial, endTrial } = useTrials();
+  const router = useRouter();
+  // A product page can hand us a product to rank (`/shelf?rank=<id>`).
+  const { rank: rankParam } = useLocalSearchParams<{ rank?: string }>();
   const [section, setSection] = useState<'products' | 'routines' | 'trials'>('products');
   const [domain, setDomain] = useState<Domain>('makeup');
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // The picker is shared by two flows, so it has to know which one opened it. The ref keeps the
+  // title and list stable while the modal animates closed (state goes null immediately).
+  const [pickerMode, setPickerMode] = useState<'rank' | 'trial' | null>(null);
+  const pickerModeRef = useRef<'rank' | 'trial'>('rank');
+  const openPicker = (mode: 'rank' | 'trial') => {
+    pickerModeRef.current = mode;
+    setPickerMode(mode);
+  };
   const [detailFor, setDetailFor] = useState<string | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
 
@@ -74,10 +86,30 @@ export default function ShelfScreen() {
     const p = getProduct(productId);
     if (!p) return;
     const sameCat = shelf.filter((id) => id !== productId && getProduct(id)?.category === p.category);
-    setPickerOpen(false);
+    setPickerMode(null);
     setDetailFor(null);
+    setDomain(productDomain(p));
+    setSection('products');
     setFlow({ productId, domain: productDomain(p), phase: 'reaction', shelf: sameCat });
   };
+
+  // Consume the ?rank= hand-off once, then clear it so returning to the tab doesn't re-open it.
+  useEffect(() => {
+    if (!rankParam) return;
+    startRank(rankParam);
+    router.setParams({ rank: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rankParam]);
+
+  const onPickFromPicker = (productId: string) => {
+    if (pickerModeRef.current === 'trial') {
+      startTrial(productId);
+      setPickerMode(null);
+      return;
+    }
+    startRank(productId);
+  };
+
   const onReaction = (reaction: Reaction) => {
     if (!flow) return;
     const { lo, hi } = reactionRange(reaction, flow.shelf.length);
@@ -135,7 +167,7 @@ export default function ShelfScreen() {
               />
             </View>
             <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>
-              <PrimaryButton icon={<Plus size={18} color={palette.white} />} label="Rank a product" onPress={() => setPickerOpen(true)} />
+              <PrimaryButton icon={<Plus size={18} color={palette.white} />} label="Rank a product" onPress={() => openPicker('rank')} />
             </View>
 
             {grouped.length > 0 ? (
@@ -185,14 +217,14 @@ export default function ShelfScreen() {
 
         {section === 'trials' ? (
           <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>
-            <PrimaryButton icon={<FlaskConical size={18} color={palette.white} />} label="Start a trial" onPress={() => setPickerOpen(true)} />
-            {sampleTrials.length === 0 ? (
+            <PrimaryButton icon={<FlaskConical size={18} color={palette.white} />} label="Start a trial" onPress={() => openPicker('trial')} />
+            {trials.length === 0 ? (
               <Text style={{ marginTop: space(6), textAlign: 'center', fontSize: 13.5, color: palette.muted, lineHeight: 20 }}>
                 No active trials yet. Track a product over time to see if it actually works for you.
               </Text>
             ) : (
               <View style={{ marginTop: space(4), gap: 8 }}>
-                {sampleTrials.map((t) => {
+                {trials.map((t) => {
                   const p = getProduct(t.productId);
                   if (!p) return null;
                   return (
@@ -202,7 +234,9 @@ export default function ShelfScreen() {
                         <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
                         <Text style={{ fontSize: 12, color: palette.muted }}>Day {t.day} · {t.checkins} check-in{t.checkins === 1 ? '' : 's'}</Text>
                       </View>
-                      <FlaskConical size={15} color={palette.accent} />
+                      <Pressable onPress={() => endTrial(t.id)} hitSlop={8} style={{ padding: 4 }}>
+                        <Trash2 size={16} color={palette.muted} />
+                      </Pressable>
                     </View>
                   );
                 })}
@@ -212,8 +246,15 @@ export default function ShelfScreen() {
         ) : null}
       </ScrollView>
 
-      {/* Pick a product to rank */}
-      <PickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={startRank} inShelf={shelf} initialDomain={domain} />
+      {/* Pick a product — to rank, or to start a trial on */}
+      <PickerModal
+        open={pickerMode !== null}
+        title={pickerModeRef.current === 'trial' ? 'Start a trial' : 'Rank a product'}
+        onClose={() => setPickerMode(null)}
+        onPick={onPickFromPicker}
+        inShelf={pickerModeRef.current === 'trial' ? trials.map((t) => t.productId) : shelf}
+        initialDomain={domain}
+      />
 
       {/* Row detail */}
       <Modal visible={!!detailProduct} transparent animationType="fade" onRequestClose={() => setDetailFor(null)}>
@@ -311,7 +352,7 @@ function EmptyProducts({ domain }: { domain: Domain }) {
   );
 }
 
-function PickerModal({ open, onClose, onPick, inShelf, initialDomain }: { open: boolean; onClose: () => void; onPick: (id: string) => void; inShelf: string[]; initialDomain: Domain }) {
+function PickerModal({ open, title, onClose, onPick, inShelf, initialDomain }: { open: boolean; title: string; onClose: () => void; onPick: (id: string) => void; inShelf: string[]; initialDomain: Domain }) {
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const [domain, setDomain] = useState<Domain>(initialDomain);
@@ -324,10 +365,12 @@ function PickerModal({ open, onClose, onPick, inShelf, initialDomain }: { open: 
   }, [q, domain, inShelf]);
 
   return (
-    <Modal visible={open} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
+    // react-native-web never settles the "slide" animation — the sheet stays translated a full
+    // viewport down and the picker is invisible. Slide on native, fade on web.
+    <Modal visible={open} animationType={Platform.OS === 'web' ? 'fade' : 'slide'} onRequestClose={onClose} presentationStyle="pageSheet">
       <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: space(4) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(5) }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: palette.ink }}>Rank a product</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: palette.ink }}>{title}</Text>
           <Pressable onPress={onClose} hitSlop={10}><X size={24} color={palette.muted} /></Pressable>
         </View>
         <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>

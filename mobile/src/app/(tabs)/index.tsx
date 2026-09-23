@@ -12,6 +12,7 @@ import { feed, friendShelves, getPerson, myShelf, people, rankMoves } from '@/co
 import { friendRankedShelf, tasteItemsFromIds, tasteMatchWithFriend } from '@/core/taste';
 import { palette, radius, space } from '@/core/theme';
 import type { Product, Tier } from '@/core/types';
+import { useFollowing } from '@/data/follow-store';
 
 // Curated benefit chips for the skincare heroes (display-only, mirrors the web reference).
 const FEED_TAGS: Record<string, string[]> = {
@@ -116,9 +117,14 @@ export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [tab, setTab] = useState<'foryou' | 'following'>('foryou');
+  const { following } = useFollowing();
 
-  // Following drops your own activity (none in the sample yet) — friends only.
-  const entries = useMemo(() => ALL_ENTRIES, [tab]);
+  // For You is the whole graph; Following is only people you follow (toggle it in Followers/
+  // Following and this list changes).
+  const entries = useMemo(
+    () => (tab === 'following' ? ALL_ENTRIES.filter((e) => following.includes(e.personId)) : ALL_ENTRIES),
+    [tab, following],
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
@@ -173,9 +179,21 @@ export default function FeedScreen() {
 
         {/* Cards */}
         <View style={{ marginTop: space(4), paddingHorizontal: space(5), gap: space(3) }}>
-          {entries.map((d) => (
-            <FeedCard key={d.key} d={d} />
-          ))}
+          {entries.length === 0 ? (
+            <View style={{ paddingVertical: space(8), alignItems: 'center', gap: space(3) }}>
+              <Text style={{ fontSize: 14, color: palette.muted, textAlign: 'center', lineHeight: 20 }}>
+                You&apos;re not following anyone yet.{'\n'}Follow people to see what they rank.
+              </Text>
+              <Pressable
+                onPress={() => router.push({ pathname: '/people', params: { type: 'following' } })}
+                style={{ borderRadius: radius.pill, backgroundColor: palette.accent, paddingHorizontal: 18, paddingVertical: 10 }}
+              >
+                <Text style={{ color: palette.white, fontSize: 14, fontWeight: '700' }}>Find people</Text>
+              </Pressable>
+            </View>
+          ) : (
+            entries.map((d) => <FeedCard key={d.key} d={d} />)
+          )}
         </View>
       </ScrollView>
     </View>

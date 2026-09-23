@@ -91,7 +91,7 @@ export default function ProductDetail() {
             </View>
           ) : null}
 
-          <Pressable onPress={() => router.push('/shelf')} style={{ marginTop: space(6), alignItems: 'center', backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15 }}>
+          <Pressable onPress={() => router.push({ pathname: '/shelf', params: { rank: p.id } })} style={{ marginTop: space(6), alignItems: 'center', backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15 }}>
             <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>{myRank ? 'Re-rank on your shelf' : 'Rank it on your shelf'}</Text>
           </Pressable>
         </View>
