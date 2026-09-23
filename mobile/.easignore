@@ -1,0 +1,21 @@
+# Everything EAS should NOT upload to the build server. Without this, every cloud build ships the
+# frozen Vite reference app, its build output and the whole repo's node_modules across the wire.
+
+# The repo root's web reference app — not part of the native build.
+../src
+../dist
+../public
+../scripts
+../node_modules
+../supabase
+../index.html
+../vite.config.ts
+../tailwind.config.js
+../postcss.config.js
+../obf-curation.md
+
+# Local-only
+.expo
+.vscode
+web-build
+*.log
