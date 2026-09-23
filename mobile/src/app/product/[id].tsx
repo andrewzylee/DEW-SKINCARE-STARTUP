@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { Avatar } from '@/components/Avatar';
 import { ProductImage } from '@/components/ProductImage';
 import { categoryLabel, categoryPlural, getProduct } from '@/core/catalog';
-import { people } from '@/core/social';
+import { people } from '@/core/socialSource';
 import { friendRankedShelf, rankedFromIds } from '@/core/taste';
 import { palette, space } from '@/core/theme';
 import type { Person } from '@/core/types';

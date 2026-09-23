@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
-import { people } from '@/core/social';
+import { people } from '@/core/socialSource';
 import { palette, radius, space } from '@/core/theme';
 import { useFollowing } from '@/data/follow-store';
 

@@ -23,21 +23,26 @@ import { Avatar } from '@/components/Avatar';
 import { ProductImage } from '@/components/ProductImage';
 import { useAuth } from '@/core/auth';
 import { categoryDomain, categoryLabel, getProduct } from '@/core/catalog';
-import { routineAM, routinePM, sampleTrials } from '@/core/shelfData';
+import { routineAM, routinePM } from '@/core/shelfData';
 import { archetypeOf, tasteItemsFromIds } from '@/core/taste';
 import { palette, radius, space } from '@/core/theme';
-import { useMyShelf } from '@/data/hooks';
+import { useMyShelf, useTrials } from '@/data/hooks';
 import { useProfile } from '@/data/profile-store';
 
-// Demo stat values (would be derived server-side in real mode).
-const DEMO = { followers: 18, following: 27, streak: 5, daysLogged: 12 };
+// Demo stat values. These are ONLY legitimate in Demo Mode — showing a real signed-in user an
+// invented follower count and streak is a lie about their own account. The social tables and
+// daily_logs have no client code yet, so real mode reports zero until they do.
+const DEMO_STATS = { followers: 18, following: 27, streak: 5, daysLogged: 12 };
+const REAL_STATS = { followers: 0, following: 0, streak: 0, daysLogged: 0 };
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signOut, isDemo } = useAuth();
+  const stats = isDemo ? DEMO_STATS : REAL_STATS;
   const { profile, skinProfile } = useProfile();
   const { shelf } = useMyShelf();
+  const { trials } = useTrials();
 
   // Built from the onboarding quiz answers rather than hardcoded, so it reflects this user.
   const skinSummary = useMemo(() => {
@@ -61,7 +66,8 @@ export default function ProfileScreen() {
     return { makeup, skincare, fragrance };
   }, [shelf]);
 
-  const routineCount = new Set([...routineAM, ...routinePM]).size;
+  // routine_items has no client code yet, so the starter routine is demo content too.
+  const routineCount = isDemo ? new Set([...routineAM, ...routinePM]).size : 0;
   const name = profile?.display_name ?? 'You';
   const handle = profile?.handle ?? 'you';
   const bio = profile?.bio?.trim() ?? '';
@@ -116,11 +122,11 @@ export default function ProfileScreen() {
 
           {/* Stats */}
           <View style={{ marginTop: space(5), flexDirection: 'row', alignItems: 'stretch' }}>
-            <Stat label="Followers" value={DEMO.followers} onPress={() => router.push({ pathname: '/people', params: { type: 'followers', count: String(DEMO.followers) } })} />
+            <Stat label="Followers" value={stats.followers} onPress={() => router.push({ pathname: '/people', params: { type: 'followers', count: String(stats.followers) } })} />
             <View style={{ width: 1, backgroundColor: palette.line, marginVertical: 4 }} />
-            <Stat label="Following" value={DEMO.following} onPress={() => router.push({ pathname: '/people', params: { type: 'following', count: String(DEMO.following) } })} />
+            <Stat label="Following" value={stats.following} onPress={() => router.push({ pathname: '/people', params: { type: 'following', count: String(stats.following) } })} />
             <View style={{ width: 1, backgroundColor: palette.line, marginVertical: 4 }} />
-            <Stat label="Day streak" value={DEMO.streak} onPress={() => router.push('/calendar')} />
+            <Stat label="Day streak" value={stats.streak} onPress={() => router.push('/calendar')} />
           </View>
 
           {/* Actions */}
@@ -172,11 +178,11 @@ export default function ProfileScreen() {
           {/* Streak / activity */}
           <View style={{ marginTop: space(4), flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: palette.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: palette.line, padding: space(4) }}>
             <View style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: palette.accent }}>{DEMO.streak}</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: palette.accent }}>{stats.streak}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: palette.ink }}>{DEMO.streak}-day streak 🔥</Text>
-              <Text style={{ fontSize: 13, color: palette.muted }}>{DEMO.daysLogged} check-ins · keep it going</Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: palette.ink }}>{stats.streak}-day streak 🔥</Text>
+              <Text style={{ fontSize: 13, color: palette.muted }}>{stats.daysLogged} check-ins · keep it going</Text>
             </View>
             <Pressable onPress={() => router.push('/add')} style={{ borderRadius: 999, backgroundColor: palette.accent, paddingHorizontal: 16, paddingVertical: 9 }}>
               <Text style={{ color: palette.white, fontWeight: '700', fontSize: 13 }}>Log</Text>
@@ -187,8 +193,8 @@ export default function ProfileScreen() {
           <View style={{ marginTop: space(4), backgroundColor: palette.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: palette.line, overflow: 'hidden' }}>
             <ListRow icon={BarChart3} label="Ranked" value={shelf.length} onPress={() => router.push('/shelf')} />
             <ListRow icon={Layers} label="In your routine" value={routineCount} onPress={() => router.push('/shelf')} border />
-            <ListRow icon={ListChecks} label="Days logged" value={DEMO.daysLogged} onPress={() => router.push('/add')} border />
-            <ListRow icon={FlaskConical} label="Trials" value={sampleTrials.length} onPress={() => router.push('/shelf')} border />
+            <ListRow icon={ListChecks} label="Days logged" value={stats.daysLogged} onPress={() => router.push('/add')} border />
+            <ListRow icon={FlaskConical} label="Trials" value={trials.length} onPress={() => router.push('/shelf')} border />
           </View>
 
           {/* Recent activity */}

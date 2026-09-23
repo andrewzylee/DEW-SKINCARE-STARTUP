@@ -4,7 +4,7 @@ import { useRouter, type Href } from 'expo-router';
 import { ArrowLeft, Flame, Heart, MessageCircle, Sparkles, UserPlus } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
-import { getPerson } from '@/core/social';
+import { getPerson, usingDemoGraph } from '@/core/socialSource';
 import { palette, radius, space } from '@/core/theme';
 
 // Notifications — social pings derived from the sample graph (demo). The Feed bell opens this.
@@ -19,7 +19,10 @@ interface Notif {
   href: Href;
 }
 
-const NOTIFS: Notif[] = [
+// Sample pings, derived from the demo cast. On a real backend there is no notifications source
+// yet (posts / post_likes / comments / follows have no client code), so the list is empty rather
+// than inventing activity from people who do not exist.
+const SAMPLE_NOTIFS: Notif[] = [
   { id: 'n1', kind: 'like', personId: 'emily', action: 'liked your ranking of Glossier Skin Tint', time: '12m', unread: true, href: { pathname: '/person/[id]', params: { id: 'emily' } } },
   { id: 'n2', kind: 'follow', personId: 'marcus', action: 'started following you', time: '1h', href: { pathname: '/person/[id]', params: { id: 'marcus' } } },
   { id: 'n3', kind: 'comment', personId: 'priya', action: 'commented: “Same skin type — trying this next.”', time: '3h', href: { pathname: '/person/[id]', params: { id: 'priya' } } },
@@ -27,6 +30,8 @@ const NOTIFS: Notif[] = [
   { id: 'n5', kind: 'follow', personId: 'devon', action: 'started following you', time: '1d', href: { pathname: '/person/[id]', params: { id: 'devon' } } },
   { id: 'n6', kind: 'milestone', action: 'You hit a 5-day streak 🔥 Keep it going', time: '2d', href: '/calendar' },
 ];
+
+const NOTIFS: Notif[] = usingDemoGraph ? SAMPLE_NOTIFS : [];
 
 const KIND_ICON = { follow: UserPlus, like: Heart, comment: MessageCircle, twin: Sparkles, milestone: Flame } as const;
 const KIND_TINT = { follow: palette.accent, like: palette.tierF, comment: palette.tierB, twin: palette.makeup, milestone: palette.makeup } as const;
@@ -43,6 +48,17 @@ export default function NotificationsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(5), paddingTop: space(2), paddingBottom: insets.bottom + space(8) }} showsVerticalScrollIndicator={false}>
+        {NOTIFS.length === 0 ? (
+          <View style={{ paddingTop: space(10), alignItems: 'center', paddingHorizontal: space(6) }}>
+            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: palette.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={24} color={palette.accent} />
+            </View>
+            <Text style={{ marginTop: space(4), fontSize: 16, fontWeight: '700', color: palette.ink }}>Nothing yet</Text>
+            <Text style={{ marginTop: space(2), fontSize: 14, lineHeight: 20, color: palette.muted, textAlign: 'center' }}>
+              When people follow you or react to your rankings, it&apos;ll show up here.
+            </Text>
+          </View>
+        ) : null}
         {NOTIFS.map((n) => {
           const person = n.personId ? getPerson(n.personId) : undefined;
           const Icon = KIND_ICON[n.kind];

@@ -8,7 +8,7 @@ import { Avatar } from '@/components/Avatar';
 import { ProductImage } from '@/components/ProductImage';
 import { categoryLabel, getProduct } from '@/core/catalog';
 import { getPostById, type Comment } from '@/core/activity';
-import { getPerson } from '@/core/social';
+import { getPerson } from '@/core/socialSource';
 import { palette, radius, space } from '@/core/theme';
 import { useProfile } from '@/data/profile-store';
 

@@ -8,7 +8,7 @@ import { Avatar } from '@/components/Avatar';
 import { ProductImage } from '@/components/ProductImage';
 import { categoryLabel, getProduct } from '@/core/catalog';
 import { tierColor } from '@/core/ranking';
-import { feed, friendShelves, getPerson, myShelf, people, rankMoves } from '@/core/social';
+import { feed, friendShelves, getPerson, myShelf, people, rankMoves, usingDemoGraph } from '@/core/socialSource';
 import { friendRankedShelf, tasteItemsFromIds, tasteMatchWithFriend } from '@/core/taste';
 import { palette, radius, space } from '@/core/theme';
 import type { Product, Tier } from '@/core/types';
@@ -138,9 +138,12 @@ export default function FeedScreen() {
             </Pressable>
             <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
               <Bell size={21} color={palette.muted} />
-              <View style={{ position: 'absolute', top: -5, right: -5, backgroundColor: palette.tierF, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
-                <Text style={{ color: palette.white, fontSize: 9, fontWeight: '700' }}>1</Text>
-              </View>
+              {/* Only the demo cast generates notifications; a real account has none yet. */}
+              {usingDemoGraph ? (
+                <View style={{ position: 'absolute', top: -5, right: -5, backgroundColor: palette.tierF, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
+                  <Text style={{ color: palette.white, fontSize: 9, fontWeight: '700' }}>1</Text>
+                </View>
+              ) : null}
             </Pressable>
             <Pressable onPress={() => router.push('/menu')} hitSlop={8}>
               <Menu size={22} color={palette.muted} />
@@ -181,14 +184,25 @@ export default function FeedScreen() {
         <View style={{ marginTop: space(4), paddingHorizontal: space(5), gap: space(3) }}>
           {entries.length === 0 ? (
             <View style={{ paddingVertical: space(8), alignItems: 'center', gap: space(3) }}>
-              <Text style={{ fontSize: 14, color: palette.muted, textAlign: 'center', lineHeight: 20 }}>
-                You&apos;re not following anyone yet.{'\n'}Follow people to see what they rank.
+              <Text style={{ fontSize: 16, fontWeight: '700', color: palette.ink }}>
+                {usingDemoGraph ? 'No one to show' : 'Your feed is empty'}
+              </Text>
+              <Text style={{ fontSize: 14, color: palette.muted, textAlign: 'center', lineHeight: 20, maxWidth: 300 }}>
+                {usingDemoGraph
+                  ? "You're not following anyone yet. Follow people to see what they rank."
+                  : 'Rank a few products, then invite the people whose taste you actually trust — their rankings show up here.'}
               </Text>
               <Pressable
-                onPress={() => router.push({ pathname: '/people', params: { type: 'following' } })}
+                onPress={() =>
+                  usingDemoGraph
+                    ? router.push({ pathname: '/people', params: { type: 'following' } })
+                    : router.push('/shelf')
+                }
                 style={{ borderRadius: radius.pill, backgroundColor: palette.accent, paddingHorizontal: 18, paddingVertical: 10 }}
               >
-                <Text style={{ color: palette.white, fontSize: 14, fontWeight: '700' }}>Find people</Text>
+                <Text style={{ color: palette.white, fontSize: 14, fontWeight: '700' }}>
+                  {usingDemoGraph ? 'Find people' : 'Rank your first product'}
+                </Text>
               </Pressable>
             </View>
           ) : (

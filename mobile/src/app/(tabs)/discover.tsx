@@ -9,7 +9,7 @@ import { ProductImage } from '@/components/ProductImage';
 import { catalog, categoryLabel, getProduct } from '@/core/catalog';
 import { featuredLists, lookalikeStats } from '@/core/discovery';
 import { GOAL_ADJECTIVE, type Concern } from '@/core/quiz';
-import { friendShelves, myShelf, people } from '@/core/social';
+import { friendShelves, myShelf, people, usingDemoGraph } from '@/core/socialSource';
 import { tasteItemsFromIds, tasteMatchWithFriend } from '@/core/taste';
 import { palette, radius, space } from '@/core/theme';
 import type { Product } from '@/core/types';
@@ -134,7 +134,8 @@ export default function DiscoverScreen() {
               </Pressable>
             </View>
 
-            {/* Taste twins */}
+            {/* Taste twins — only exist once there is a real social graph. */}
+            {twins.length > 0 ? (
             <View style={{ paddingTop: space(5) }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: space(5) }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Your taste twins</Text>
@@ -154,6 +155,7 @@ export default function DiscoverScreen() {
                 ))}
               </ScrollView>
             </View>
+            ) : null}
 
             {/* Featured lists */}
             <View style={{ paddingTop: space(6) }}>
@@ -185,6 +187,11 @@ export default function DiscoverScreen() {
               <View style={{ paddingTop: space(6), paddingHorizontal: space(5) }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Trending on Dew</Text>
                 <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4, marginBottom: space(2) }}>Most-shelved products right now.</Text>
+                {TRENDING.length === 0 ? (
+                  <Text style={{ fontSize: 13.5, color: palette.muted, lineHeight: 20, paddingTop: space(2) }}>
+                    Nothing is trending yet — this fills in as people rank products.
+                  </Text>
+                ) : null}
                 <View style={{ gap: 8 }}>
                   {TRENDING.map(({ productId, shelves }) => {
                     const p = getProduct(productId);
@@ -214,7 +221,7 @@ export default function DiscoverScreen() {
                 <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4, marginBottom: space(2) }}>Top picks from the people who rank like you — that you haven&apos;t ranked yet.</Text>
                 {FRIEND_RECS.length === 0 ? (
                   <Text style={{ fontSize: 13.5, color: palette.muted, lineHeight: 20, paddingTop: space(2) }}>
-                    You&apos;ve already ranked everything your taste twins have. Rank more to widen the net.
+                    {twins.length === 0 ? 'No taste twins yet — invite people you trust and their picks show up here.' : "You've already ranked everything your taste twins have. Rank more to widen the net."}
                   </Text>
                 ) : (
                   <View style={{ gap: 8 }}>
@@ -240,8 +247,9 @@ export default function DiscoverScreen() {
               </View>
             ) : null}
 
-            {/* Works for skin like yours */}
-            {view === 'foryou' ? (
+            {/* Works for skin like yours — the percentages are invented sample stats, so they
+                only appear alongside the demo cast. Real cohort stats need rank_events. */}
+            {view === 'foryou' && usingDemoGraph ? (
               <View style={{ paddingTop: space(6), paddingHorizontal: space(5) }}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Works for skin like yours</Text>
                 <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4, marginBottom: space(2) }}>

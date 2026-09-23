@@ -7,7 +7,7 @@ import { Avatar } from '@/components/Avatar';
 import { ProductImage } from '@/components/ProductImage';
 import { categoryLabel, getProduct } from '@/core/catalog';
 import { tierColor } from '@/core/ranking';
-import { friendShelves, getPerson, myShelf } from '@/core/social';
+import { friendShelves, getPerson, myShelf } from '@/core/socialSource';
 import { friendRankedShelf, tasteItemsFromIds, tasteMatchWithFriend } from '@/core/taste';
 import { palette, space } from '@/core/theme';
 
