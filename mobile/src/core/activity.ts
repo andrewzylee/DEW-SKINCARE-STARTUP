@@ -2,7 +2,7 @@
 // render the same thing (score/rank, review, comments). Ported from the web reference
 // (src/lib/activity.ts + data/social seedComments). Demo comments are deterministic so threads
 // feel alive without a backend.
-import { tierColor } from './ranking';
+import { tierColor, tierInk } from './ranking';
 import { feed, getPerson, rankMoves } from './social';
 
 export interface Comment {
@@ -14,7 +14,8 @@ export interface Comment {
 
 export interface PostBadge {
   text: string;
-  color: string;
+  color: string; // ring
+  ink: string; // text — the AA-contrast variant of `color`
 }
 
 export interface ActivityPost {
@@ -59,7 +60,7 @@ function feedToPost(id: string): ActivityPost | undefined {
     person: { name: p?.name ?? 'Someone', tint: p?.tint },
     action: 'ranked',
     productId: a.productId,
-    badge: { text: a.tier, color: tierColor(a.tier) },
+    badge: { text: a.tier, color: tierColor(a.tier), ink: tierInk(a.tier) },
     review: a.standout ?? a.note,
     likes: a.likes,
     timeAgo: a.timeAgo,
@@ -78,7 +79,7 @@ function moveToPost(id: string): ActivityPost | undefined {
     person: { name: p?.name ?? 'Someone', tint: p?.tint },
     action: isNew ? (m.toRank === 1 ? 'ranked a new #1' : 'ranked') : 're-ranked',
     productId: m.productId,
-    badge: { text: `#${m.toRank}`, color: tierColor('A') },
+    badge: { text: `#${m.toRank}`, color: tierColor('A'), ink: tierInk('A') },
     review: m.reason,
     likes: 0,
     timeAgo: m.timeAgo,

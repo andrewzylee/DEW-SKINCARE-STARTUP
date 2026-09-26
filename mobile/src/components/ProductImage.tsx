@@ -1,4 +1,5 @@
-import { Image, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Text } from '@/components/Text';
 import { palette } from '@/core/theme';
 import { localProductImage } from '@/core/productImages';
 
@@ -17,13 +18,14 @@ function hash(s: string): number {
   for (let i = 0; i < s.length; i += 1) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
+// Each ink clears 4.5:1 on its tile.
 const TILES = [
   { bg: '#E8EFE9', ink: '#566E5E' },
-  { bg: '#F5EAE1', ink: '#96654F' },
-  { bg: '#F1ECE2', ink: '#847354' },
+  { bg: '#F5EAE1', ink: '#8C5E49' },
+  { bg: '#F1ECE2', ink: '#77674C' },
   { bg: '#ECEBE8', ink: '#6B685F' },
-  { bg: '#F0E7E7', ink: '#876666' },
-  { bg: '#E7EDF1', ink: '#5B6D77' },
+  { bg: '#F0E7E7', ink: '#7F6060' },
+  { bg: '#E7EDF1', ink: '#5A6C76' },
   { bg: '#EDEAF0', ink: '#6C6379' },
 ] as const;
 
@@ -65,7 +67,8 @@ export function ProductImage({
       {showLabel ? (
         <Text
           numberOfLines={1}
-          style={{ marginTop: 2, color: tile.ink, opacity: 0.72, fontSize: 8, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, maxWidth: '86%' }}
+          // Part of the placeholder artwork, so it scales with the tile (like the initials) instead of using the type scale.
+          style={{ marginTop: 2, color: tile.ink, fontSize: Math.max(8, Math.round(min * 0.1)), fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, maxWidth: '86%' }}
         >
           {category}
         </Text>

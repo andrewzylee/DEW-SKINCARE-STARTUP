@@ -148,6 +148,14 @@ export function resolveProfile(a: Partial<Record<QuizQuestionId, string>>, inter
 }
 
 export const SKIN_LABEL: Record<SkinType, string> = { oily: 'oily', combination: 'combination', dry: 'dry', sensitive: 'sensitive' };
+// Adjective form, for describing a cohort ("combination & acne-prone skin").
+export const GOAL_ADJECTIVE: Record<Concern, string> = {
+  acne: 'acne-prone',
+  oil: 'oil-prone',
+  texture: 'texture-focused',
+  darkspots: 'dark-spot-prone',
+  starter: 'routine-building',
+};
 export const GOAL_LABEL: Record<Concern, string> = {
   acne: 'clear breakouts',
   oil: 'control oil',

@@ -1,11 +1,13 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, FlaskConical, Plus, Search, Sun, Trash2, X } from 'lucide-react-native';
 
 import { CompareCard } from '@/components/CompareCard';
 import { ProductImage } from '@/components/ProductImage';
 import { SegmentedToggle } from '@/components/SegmentedToggle';
+import { Text, TextInput } from '@/components/Text';
 import { TierBadge } from '@/components/TierBadge';
 import { catalog, categoriesForDomain, categoryLabel, categoryPlural, getProduct, productDomain } from '@/core/catalog';
 import {
@@ -15,13 +17,13 @@ import {
   isCompareDone,
   reactionRange,
   startCompareInRange,
-  tierColor,
+  tierInk,
   type CompareSession,
 } from '@/core/ranking';
-import { routineAM, routinePM, sampleTrials } from '@/core/shelfData';
-import { useMyShelf } from '@/data/hooks';
+import { routineAM, routinePM } from '@/core/shelfData';
+import { useMyShelf, useTrials } from '@/data/hooks';
 import { rankedFromIds } from '@/core/taste';
-import { palette, radius, space } from '@/core/theme';
+import { EMOJI_SIZE, font, hitSlopFor, palette, radius, space } from '@/core/theme';
 import type { Category, Domain, Reaction } from '@/core/types';
 
 const REACTIONS: { key: Reaction; emoji: string; label: string }[] = [
@@ -57,9 +59,20 @@ interface Flow {
 export default function ShelfScreen() {
   const insets = useSafeAreaInsets();
   const { shelf, applyOrder, remove } = useMyShelf();
+  const { trials, startTrial, endTrial } = useTrials();
+  const router = useRouter();
+  // A product page can hand us a product to rank (`/shelf?rank=<id>`).
+  const { rank: rankParam } = useLocalSearchParams<{ rank?: string }>();
   const [section, setSection] = useState<'products' | 'routines' | 'trials'>('products');
   const [domain, setDomain] = useState<Domain>('makeup');
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // The picker is shared by two flows, so it has to know which one opened it. The ref keeps the
+  // title and list stable while the modal animates closed (state goes null immediately).
+  const [pickerMode, setPickerMode] = useState<'rank' | 'trial' | null>(null);
+  const pickerModeRef = useRef<'rank' | 'trial'>('rank');
+  const openPicker = (mode: 'rank' | 'trial') => {
+    pickerModeRef.current = mode;
+    setPickerMode(mode);
+  };
   const [detailFor, setDetailFor] = useState<string | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
 
@@ -74,10 +87,30 @@ export default function ShelfScreen() {
     const p = getProduct(productId);
     if (!p) return;
     const sameCat = shelf.filter((id) => id !== productId && getProduct(id)?.category === p.category);
-    setPickerOpen(false);
+    setPickerMode(null);
     setDetailFor(null);
+    setDomain(productDomain(p));
+    setSection('products');
     setFlow({ productId, domain: productDomain(p), phase: 'reaction', shelf: sameCat });
   };
+
+  // Consume the ?rank= hand-off once, then clear it so returning to the tab doesn't re-open it.
+  useEffect(() => {
+    if (!rankParam) return;
+    startRank(rankParam);
+    router.setParams({ rank: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rankParam]);
+
+  const onPickFromPicker = (productId: string) => {
+    if (pickerModeRef.current === 'trial') {
+      startTrial(productId);
+      setPickerMode(null);
+      return;
+    }
+    startRank(productId);
+  };
+
   const onReaction = (reaction: Reaction) => {
     if (!flow) return;
     const { lo, hi } = reactionRange(reaction, flow.shelf.length);
@@ -105,8 +138,8 @@ export default function ShelfScreen() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space(4), paddingBottom: space(8) }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingHorizontal: space(5) }}>
-          <Text style={{ fontSize: 34, fontWeight: '700', color: palette.ink, letterSpacing: -0.5 }}>Shelf</Text>
-          <Text style={{ marginTop: space(2), fontSize: 15, color: palette.muted }}>Everything you've tried, saved and use.</Text>
+          <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.hero, fontWeight: '600', color: palette.ink }}>Shelf</Text>
+          <Text style={{ marginTop: space(2), fontSize: font.size.base, color: palette.muted }}>Everything you've tried, saved and use.</Text>
         </View>
 
         <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>
@@ -135,7 +168,7 @@ export default function ShelfScreen() {
               />
             </View>
             <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>
-              <PrimaryButton icon={<Plus size={18} color={palette.white} />} label="Rank a product" onPress={() => setPickerOpen(true)} />
+              <PrimaryButton icon={<Plus size={18} color={palette.white} />} label="Rank a product" onPress={() => openPicker('rank')} />
             </View>
 
             {grouped.length > 0 ? (
@@ -143,8 +176,8 @@ export default function ShelfScreen() {
                 {grouped.map((g) => (
                   <View key={g.cat} style={{ marginBottom: space(5) }}>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingBottom: 10 }}>
-                      <Text style={{ fontSize: 23, fontWeight: '700', color: palette.ink }}>{categoryLabel(g.cat)}</Text>
-                      <Text style={{ fontSize: 12.5, fontWeight: '500', color: palette.muted }}>{g.items.length} ranked</Text>
+                      <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink }}>{categoryLabel(g.cat)}</Text>
+                      <Text style={{ fontSize: font.size.sm, fontWeight: '500', color: palette.muted }}>{g.items.length} ranked</Text>
                     </View>
                     <View style={{ gap: 8 }}>
                       {g.items.map((it) => {
@@ -154,14 +187,17 @@ export default function ShelfScreen() {
                           <Pressable
                             key={it.productId}
                             onPress={() => setDetailFor(it.productId)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${p.name}, ${p.brand}. Number ${it.groupRank} of ${it.groupSize} ${categoryPlural(g.cat)}, ${it.tier} tier`}
+                            accessibilityHint="Re-rank or remove"
                             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: palette.surface, borderRadius: 20, padding: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 }}
                           >
-                            <Text style={{ width: 34, textAlign: 'center', fontSize: 27, fontWeight: '700', color: tierColor(it.tier) }}>{String(it.groupRank).padStart(2, '0')}</Text>
+                            <Text style={{ width: 36, textAlign: 'center', fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: tierInk(it.tier) }}>{String(it.groupRank).padStart(2, '0')}</Text>
                             <ProductImage id={p.id} brand={p.brand} image={p.image} category={categoryLabel(p.category)} width={52} height={52} radius={14} />
                             <View style={{ flex: 1 }}>
-                              <Text numberOfLines={1} style={{ fontSize: 15.5, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
-                              <Text numberOfLines={1} style={{ fontSize: 12.5, color: palette.muted }}>{p.brand}</Text>
-                              <Text style={{ fontSize: 11.5, color: palette.muted, marginTop: 2 }}>#{it.groupRank} of {it.groupSize} {categoryPlural(g.cat)}</Text>
+                              <Text numberOfLines={1} style={{ fontSize: font.size.base, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
+                              <Text numberOfLines={1} style={{ fontSize: font.size.sm, color: palette.muted }}>{p.brand}</Text>
+                              <Text style={{ fontSize: font.size.xs, color: palette.muted, marginTop: 2 }}>#{it.groupRank} of {it.groupSize} {categoryPlural(g.cat)}</Text>
                             </View>
                           </Pressable>
                         );
@@ -185,24 +221,26 @@ export default function ShelfScreen() {
 
         {section === 'trials' ? (
           <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>
-            <PrimaryButton icon={<FlaskConical size={18} color={palette.white} />} label="Start a trial" onPress={() => setPickerOpen(true)} />
-            {sampleTrials.length === 0 ? (
-              <Text style={{ marginTop: space(6), textAlign: 'center', fontSize: 13.5, color: palette.muted, lineHeight: 20 }}>
+            <PrimaryButton icon={<FlaskConical size={18} color={palette.white} />} label="Start a trial" onPress={() => openPicker('trial')} />
+            {trials.length === 0 ? (
+              <Text style={{ marginTop: space(6), textAlign: 'center', fontSize: font.size.sm, color: palette.muted, lineHeight: 20 }}>
                 No active trials yet. Track a product over time to see if it actually works for you.
               </Text>
             ) : (
               <View style={{ marginTop: space(4), gap: 8 }}>
-                {sampleTrials.map((t) => {
+                {trials.map((t) => {
                   const p = getProduct(t.productId);
                   if (!p) return null;
                   return (
                     <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 18, padding: 10, borderWidth: 1, borderColor: palette.line }}>
                       <ProductImage id={p.id} brand={p.brand} image={p.image} width={44} height={44} radius={12} />
                       <View style={{ flex: 1 }}>
-                        <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
-                        <Text style={{ fontSize: 12, color: palette.muted }}>Day {t.day} · {t.checkins} check-in{t.checkins === 1 ? '' : 's'}</Text>
+                        <Text numberOfLines={1} style={{ fontSize: font.size.base, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
+                        <Text style={{ fontSize: font.size.xs, color: palette.muted }}>Day {t.day} · {t.checkins} check-in{t.checkins === 1 ? '' : 's'}</Text>
                       </View>
-                      <FlaskConical size={15} color={palette.accent} />
+                      <Pressable onPress={() => endTrial(t.id)} hitSlop={hitSlopFor(24)} accessibilityRole="button" accessibilityLabel={`End trial of ${p.name}`} style={{ padding: 4 }}>
+                        <Trash2 size={16} color={palette.muted} />
+                      </Pressable>
                     </View>
                   );
                 })}
@@ -212,39 +250,54 @@ export default function ShelfScreen() {
         ) : null}
       </ScrollView>
 
-      {/* Pick a product to rank */}
-      <PickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={startRank} inShelf={shelf} initialDomain={domain} />
+      {/* Pick a product — to rank, or to start a trial on */}
+      <PickerModal
+        open={pickerMode !== null}
+        title={pickerModeRef.current === 'trial' ? 'Start a trial' : 'Rank a product'}
+        onClose={() => setPickerMode(null)}
+        onPick={onPickFromPicker}
+        inShelf={pickerModeRef.current === 'trial' ? trials.map((t) => t.productId) : shelf}
+        initialDomain={domain}
+      />
 
       {/* Row detail */}
       <Modal visible={!!detailProduct} transparent animationType="fade" onRequestClose={() => setDetailFor(null)}>
-        <Pressable onPress={() => setDetailFor(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' }}>
-          <Pressable style={{ backgroundColor: palette.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: space(5), paddingBottom: insets.bottom + space(5) }}>
+        {/* accessible={false} keeps the sheet's buttons individually reachable by screen readers. */}
+        <Pressable
+          onPress={() => setDetailFor(null)}
+          accessible={false}
+          onAccessibilityEscape={() => setDetailFor(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' }}
+        >
+          <Pressable accessible={false} style={{ backgroundColor: palette.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: space(5), paddingBottom: insets.bottom + space(5) }}>
             {detailProduct && detailRanked ? (
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <ProductImage id={detailProduct.id} brand={detailProduct.brand} image={detailProduct.image} category={categoryLabel(detailProduct.category)} width={56} height={56} radius={14} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: palette.ink }}>{detailProduct.name}</Text>
-                    <Text style={{ fontSize: 13, color: palette.muted }}>{detailProduct.brand}</Text>
+                    <Text style={{ fontSize: font.size.lg, fontWeight: '700', color: palette.ink }}>{detailProduct.name}</Text>
+                    <Text style={{ fontSize: font.size.sm, color: palette.muted }}>{detailProduct.brand}</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 4 }}>
                     <TierBadge tier={detailRanked.tier} />
-                    <Text style={{ fontSize: 12, color: palette.muted }}>#{detailRanked.groupRank} of {detailRanked.groupSize}</Text>
+                    <Text style={{ fontSize: font.size.xs, color: palette.muted }}>#{detailRanked.groupRank} of {detailRanked.groupSize}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: space(5) }}>
-                  <Pressable onPress={() => startRank(detailProduct.id)} style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(46,46,46,0.05)', borderRadius: 999, paddingVertical: 13 }}>
-                    <Text style={{ fontSize: 14.5, fontWeight: '700', color: palette.ink }}>Re-rank</Text>
+                  <Pressable onPress={() => startRank(detailProduct.id)} accessibilityRole="button" style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(46,46,46,0.05)', borderRadius: 999, paddingVertical: 13 }}>
+                    <Text style={{ fontSize: font.size.base, fontWeight: '700', color: palette.ink }}>Re-rank</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
                       remove(detailProduct.id);
                       setDetailFor(null);
                     }}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 18, backgroundColor: 'rgba(194,123,99,0.1)' }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${detailProduct.name} from your shelf`}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 18, backgroundColor: 'rgba(168,67,47,0.1)' }}
                   >
-                    <Trash2 size={16} color={palette.tierF} />
-                    <Text style={{ fontSize: 14.5, fontWeight: '700', color: palette.tierF }}>Remove</Text>
+                    <Trash2 size={16} color={palette.danger} />
+                    <Text style={{ fontSize: font.size.base, fontWeight: '700', color: palette.danger }}>Remove</Text>
                   </Pressable>
                 </View>
               </>
@@ -261,9 +314,9 @@ export default function ShelfScreen() {
 
 function PrimaryButton({ icon, label, onPress }: { icon: ReactNode; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15, opacity: pressed ? 0.9 : 1 })}>
+    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15, opacity: pressed ? 0.9 : 1 })}>
       {icon}
-      <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: palette.white, fontSize: font.size.lg, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -273,7 +326,7 @@ function RoutineBlock({ title, ids }: { title: string; ids: string[] }) {
     <View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         <Sun size={16} color={palette.accent} />
-        <Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>{title}</Text>
+        <Text accessibilityRole="header" style={{ fontSize: font.size.sm, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>{title}</Text>
       </View>
       <View style={{ backgroundColor: palette.surface, borderRadius: 18, borderWidth: 1, borderColor: palette.line, overflow: 'hidden' }}>
         {ids.map((id, i) => {
@@ -283,8 +336,8 @@ function RoutineBlock({ title, ids }: { title: string; ids: string[] }) {
             <View key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: palette.line }}>
               <ProductImage id={p.id} brand={p.brand} image={p.image} width={40} height={40} radius={12} />
               <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '600', color: palette.ink }}>{p.name}</Text>
-                <Text style={{ fontSize: 12, color: palette.muted }}>{categoryLabel(p.category)}</Text>
+                <Text numberOfLines={1} style={{ fontSize: font.size.base, fontWeight: '600', color: palette.ink }}>{p.name}</Text>
+                <Text style={{ fontSize: font.size.xs, color: palette.muted }}>{categoryLabel(p.category)}</Text>
               </View>
             </View>
           );
@@ -298,20 +351,20 @@ function EmptyProducts({ domain }: { domain: Domain }) {
   const noun = domain === 'makeup' ? 'makeup' : domain === 'fragrance' ? 'fragrance' : 'skincare';
   return (
     <View style={{ paddingHorizontal: space(5), paddingTop: space(8), alignItems: 'center' }}>
-      <View style={{ flexDirection: 'row', gap: 6, marginBottom: space(4) }}>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', gap: 6, marginBottom: space(4) }}>
         {(['S', 'A', 'B', 'C', 'F'] as const).map((t) => (
           <TierBadge key={t} tier={t} size="sm" />
         ))}
       </View>
-      <Text style={{ fontSize: 19, fontWeight: '700', color: palette.ink, textAlign: 'center' }}>Rank your first {noun} products</Text>
-      <Text style={{ marginTop: space(2), fontSize: 14, color: palette.muted, textAlign: 'center', lineHeight: 20, maxWidth: 300 }}>
+      <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink, textAlign: 'center', lineHeight: 32 }}>Rank your first {noun} products</Text>
+      <Text style={{ marginTop: space(2), fontSize: font.size.base, color: palette.muted, textAlign: 'center', lineHeight: 20, maxWidth: 300 }}>
         Add something you've used and we'll ask a couple quick head-to-heads to slot it into your tier list.
       </Text>
     </View>
   );
 }
 
-function PickerModal({ open, onClose, onPick, inShelf, initialDomain }: { open: boolean; onClose: () => void; onPick: (id: string) => void; inShelf: string[]; initialDomain: Domain }) {
+function PickerModal({ open, title, onClose, onPick, inShelf, initialDomain }: { open: boolean; title: string; onClose: () => void; onPick: (id: string) => void; inShelf: string[]; initialDomain: Domain }) {
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const [domain, setDomain] = useState<Domain>(initialDomain);
@@ -324,11 +377,13 @@ function PickerModal({ open, onClose, onPick, inShelf, initialDomain }: { open: 
   }, [q, domain, inShelf]);
 
   return (
-    <Modal visible={open} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
+    // react-native-web never settles the "slide" animation — the sheet stays translated a full
+    // viewport down and the picker is invisible. Slide on native, fade on web.
+    <Modal visible={open} animationType={Platform.OS === 'web' ? 'fade' : 'slide'} onRequestClose={onClose} presentationStyle="pageSheet">
       <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: space(4) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(5) }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: palette.ink }}>Rank a product</Text>
-          <Pressable onPress={onClose} hitSlop={10}><X size={24} color={palette.muted} /></Pressable>
+          <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink }}>{title}</Text>
+          <Pressable onPress={onClose} hitSlop={hitSlopFor(24)} accessibilityRole="button" accessibilityLabel="Close"><X size={24} color={palette.muted} /></Pressable>
         </View>
         <View style={{ paddingHorizontal: space(5), paddingTop: space(3) }}>
           <SegmentedToggle
@@ -342,21 +397,21 @@ function PickerModal({ open, onClose, onPick, inShelf, initialDomain }: { open: 
           />
           <View style={{ marginTop: space(2), flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, borderRadius: 999, paddingHorizontal: space(4) }}>
             <Search size={16} color={palette.muted} />
-            <TextInput value={q} onChangeText={setQ} placeholder="Search products you've tried" placeholderTextColor={palette.muted} style={{ flex: 1, paddingVertical: 11, fontSize: 15, color: palette.ink }} />
+            <TextInput value={q} onChangeText={setQ} placeholder="Search products you've tried" accessibilityLabel="Search products you've tried" placeholderTextColor={palette.muted} style={{ flex: 1, paddingVertical: 11, fontSize: font.size.base, color: palette.ink }} />
           </View>
         </View>
         <ScrollView contentContainerStyle={{ padding: space(5), gap: 8, paddingBottom: insets.bottom + space(5) }} keyboardShouldPersistTaps="handled">
           {results.map((p) => (
-            <Pressable key={p.id} onPress={() => onPick(p.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 18, padding: 10, borderWidth: 1, borderColor: palette.line }}>
+            <Pressable key={p.id} onPress={() => onPick(p.id)} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 18, padding: 10, borderWidth: 1, borderColor: palette.line }}>
               <ProductImage id={p.id} brand={p.brand} image={p.image} category={categoryLabel(p.category)} width={52} height={52} radius={14} />
               <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
-                <Text numberOfLines={1} style={{ fontSize: 12.5, color: palette.muted }}>{p.brand}</Text>
+                <Text numberOfLines={1} style={{ fontSize: font.size.base, fontWeight: '700', color: palette.ink }}>{p.name}</Text>
+                <Text numberOfLines={1} style={{ fontSize: font.size.sm, color: palette.muted }}>{p.brand}</Text>
               </View>
-              <Text style={{ fontSize: 10.5, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.2 }}>{categoryLabel(p.category)}</Text>
+              <Text style={{ fontSize: font.size.xs, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.2 }}>{categoryLabel(p.category)}</Text>
             </Pressable>
           ))}
-          {results.length === 0 ? <Text style={{ paddingVertical: space(6), textAlign: 'center', color: palette.muted }}>Nothing left to add for that.</Text> : null}
+          {results.length === 0 ? <Text style={{ paddingVertical: space(6), textAlign: 'center', fontSize: font.size.base, color: palette.muted }}>Nothing left to add for that.</Text> : null}
         </ScrollView>
       </View>
     </Modal>
@@ -377,8 +432,8 @@ function RankFlow({ flow, onReaction, onAnswer, onFinish, onCancel }: { flow: Fl
     <Modal visible animationType="fade" onRequestClose={onCancel}>
       <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top + space(3) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(5) }}>
-          <Pressable onPress={onCancel} hitSlop={10}><ArrowLeft size={22} color={palette.muted} /></Pressable>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.6 }}>{flow.phase === 'done' ? 'Ranked' : 'Rank'}</Text>
+          <Pressable onPress={onCancel} hitSlop={hitSlopFor(22)} accessibilityRole="button" accessibilityLabel="Cancel ranking"><ArrowLeft size={22} color={palette.muted} /></Pressable>
+          <Text style={{ fontSize: font.size.sm, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.6 }}>{flow.phase === 'done' ? 'Ranked' : 'Rank'}</Text>
           <View style={{ width: 22 }} />
         </View>
 
@@ -386,14 +441,14 @@ function RankFlow({ flow, onReaction, onAnswer, onFinish, onCancel }: { flow: Fl
           <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: space(5) }}>
             <View style={{ alignItems: 'center', marginBottom: space(6) }}>
               <ProductImage id={p.id} brand={p.brand} image={p.image} category={categoryLabel(p.category)} width={112} height={112} radius={22} />
-              <Text style={{ marginTop: 12, fontSize: 13, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>{p.name}</Text>
-              <Text style={{ marginTop: 8, fontSize: 30, fontWeight: '700', color: palette.ink, textAlign: 'center' }}>First impression?</Text>
+              <Text style={{ marginTop: 12, fontSize: font.size.sm, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>{p.name}</Text>
+              <Text accessibilityRole="header" style={{ marginTop: 8, fontFamily: font.display, fontSize: font.size.hero, fontWeight: '600', color: palette.ink, textAlign: 'center' }}>First impression?</Text>
             </View>
             <View style={{ gap: 10 }}>
               {REACTIONS.map((r) => (
-                <Pressable key={r.key} onPress={() => onReaction(r.key)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 20 }}>
-                  <Text style={{ fontSize: 24 }}>{r.emoji}</Text>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: palette.ink }}>{r.label}</Text>
+                <Pressable key={r.key} onPress={() => onReaction(r.key)} accessibilityRole="button" accessibilityLabel={r.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 20 }}>
+                  <Text style={{ fontSize: EMOJI_SIZE }}>{r.emoji}</Text>
+                  <Text style={{ fontSize: font.size.lg, fontWeight: '700', color: palette.ink }}>{r.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -402,11 +457,11 @@ function RankFlow({ flow, onReaction, onAnswer, onFinish, onCancel }: { flow: Fl
 
         {flow.phase === 'compare' && opponent ? (
           <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: space(5) }}>
-            <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Ranking {p.name}</Text>
-            <Text style={{ marginTop: 8, marginBottom: space(6), textAlign: 'center', fontSize: 28, fontWeight: '700', color: palette.ink }}>{preference ? 'Which do you like more?' : 'Which did more for your skin?'}</Text>
+            <Text style={{ textAlign: 'center', fontSize: font.size.sm, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1.4 }}>Ranking {p.name}</Text>
+            <Text accessibilityRole="header" style={{ marginTop: 8, marginBottom: space(6), textAlign: 'center', fontFamily: font.display, fontSize: font.size.hero, fontWeight: '600', color: palette.ink, lineHeight: 38 }}>{preference ? 'Which do you like more?' : 'Which did more for your skin?'}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12 }}>
               <CompareCard product={p} onChoose={() => onAnswer(true)} />
-              <View style={{ justifyContent: 'center' }}><Text style={{ fontSize: 13, fontWeight: '800', color: palette.muted }}>vs</Text></View>
+              <View style={{ justifyContent: 'center' }}><Text style={{ fontSize: font.size.sm, fontWeight: '700', color: palette.muted }}>vs</Text></View>
               <CompareCard product={opponent} onChoose={() => onAnswer(false)} />
             </View>
           </View>
@@ -415,10 +470,10 @@ function RankFlow({ flow, onReaction, onAnswer, onFinish, onCancel }: { flow: Fl
         {flow.phase === 'done' ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: space(5) }}>
             <ProductImage id={p.id} brand={p.brand} image={p.image} category={categoryLabel(p.category)} width={112} height={112} radius={22} />
-            <Text style={{ marginTop: space(4), fontSize: 28, fontWeight: '700', color: palette.ink, textAlign: 'center' }}>{p.name} is your #{newRank} {categoryLabel(p.category).toLowerCase()}</Text>
-            <Text style={{ marginTop: 6, fontSize: 15, color: palette.muted }}>#{newRank} of {total} {categoryPlural(p.category)} you've tried</Text>
-            <Pressable onPress={onFinish} style={{ marginTop: space(6), alignSelf: 'stretch', alignItems: 'center', backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15 }}>
-              <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>Done</Text>
+            <Text accessibilityRole="header" style={{ marginTop: space(4), fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink, textAlign: 'center', lineHeight: 32 }}>{p.name} is your #{newRank} {categoryLabel(p.category).toLowerCase()}</Text>
+            <Text style={{ marginTop: 6, fontSize: font.size.base, color: palette.muted }}>#{newRank} of {total} {categoryPlural(p.category)} you've tried</Text>
+            <Pressable onPress={onFinish} accessibilityRole="button" style={{ marginTop: space(6), alignSelf: 'stretch', alignItems: 'center', backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15 }}>
+              <Text style={{ color: palette.white, fontSize: font.size.lg, fontWeight: '700' }}>Done</Text>
             </Pressable>
           </View>
         ) : null}

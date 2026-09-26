@@ -1,7 +1,13 @@
-// Progress / streak helpers for the native Calendar screen. The web app derives these from a real
-// logs store; the native app has no logs store yet, so we synthesize a deterministic demo history
-// (recent days always logged so the streak reads as 5) to drive a faithful heat-map. Swap
-// demoLog() for real daily_logs when the backend is wired.
+// Progress / streak helpers for the native Calendar screen.
+//
+// There is still no logs store: the daily_logs table exists with RLS but has no client code, and
+// log.tsx doesn't persist. In Demo Mode we synthesize a deterministic history so the heat-map has
+// something faithful to render. On a real backend we synthesize NOTHING — inventing a streak for
+// someone who has never checked in is a lie about their own behaviour. Real mode reports zero
+// until daily_logs is wired, which is what the empty states are for.
+import { isSupabaseConfigured } from '@/data/config';
+
+const syntheticHistory = !isSupabaseConfigured;
 export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -10,7 +16,9 @@ export const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // Skin-rating heat-map ramp (0 Rough → 4 Great): coral → orange → gold → green → emerald.
 export const RATING_LABELS = ['Rough', 'Off', 'Okay', 'Good', 'Great'];
-export const RATING_COLORS = ['#ec6a5a', '#e8935a', '#d7a13a', '#2fb985', '#0c8f62'];
+// Day numbers and labels sit on these fills in readableOn() color (ink on the light ones, white on
+// the deep green). The ends are nudged from the web's #ec6a5a / #0c8f62 so text on them clears 4.5:1.
+export const RATING_COLORS = ['#ed7364', '#e8935a', '#d7a13a', '#2fb985', '#0b855b'];
 
 const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 const parse = (key: string) => {
@@ -34,7 +42,9 @@ function hash(s: string): number {
 }
 
 // Deterministic demo check-in for a day → skin rating 0..4, or null if not logged.
+// Always null on a real backend: no logs exist, so nothing is "logged".
 export function demoLog(key: string): number | null {
+  if (!syntheticHistory) return null;
   const today = todayKey();
   if (key > today) return null;
   const ago = diffDays(key, today);
