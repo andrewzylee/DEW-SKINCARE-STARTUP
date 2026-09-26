@@ -51,15 +51,24 @@ export function recomputeTiersGrouped<T extends object>(
   });
 }
 
-// Tier → color (the web used CSS vars; native maps straight to the palette).
+// Tier → color (the web used CSS vars; native maps straight to the palette). tierColor is for rings,
+// fills and icons; anything that renders tier-colored TEXT must use tierInk, which clears 4.5:1.
 const TIER_COLOR: Record<Tier, string> = {
   S: palette.tierS,
   A: palette.tierA,
   B: palette.tierB,
-  C: '#B79C7E', // muted tan (no --tier-c token in the reference)
+  C: palette.tierC,
   F: palette.tierF,
 };
+const TIER_INK: Record<Tier, string> = {
+  S: palette.tierSInk,
+  A: palette.tierAInk,
+  B: palette.tierBInk,
+  C: palette.tierCInk,
+  F: palette.tierFInk,
+};
 export const tierColor = (tier: Tier): string => TIER_COLOR[tier];
+export const tierInk = (tier: Tier): string => TIER_INK[tier];
 
 // ---------- resumable pairwise-comparison session (Beli-style binary-search insert) ----------
 export interface CompareSession {

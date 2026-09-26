@@ -1,8 +1,9 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { FlaskConical, ListChecks, Plus, Star, X, type LucideIcon } from 'lucide-react-native';
-import { palette, space } from '@/core/theme';
+import { Text } from '@/components/Text';
+import { font, palette, space } from '@/core/theme';
 
 export default function AddSheet() {
   const insets = useSafeAreaInsets();
@@ -19,8 +20,8 @@ export default function AddSheet() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top + space(3), paddingHorizontal: space(5) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: palette.ink }}>What do you want to do?</Text>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
+        <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink }}>What do you want to do?</Text>
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
           <X size={24} color={palette.muted} />
         </Pressable>
       </View>
@@ -29,13 +30,13 @@ export default function AddSheet() {
         {items.map((it) => {
           const Icon = it.icon;
           return (
-            <Pressable key={it.label} onPress={it.onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, padding: 14, opacity: pressed ? 0.9 : 1 })}>
+            <Pressable key={it.label} onPress={it.onPress} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, padding: 14, opacity: pressed ? 0.9 : 1 })}>
               <View style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: it.primary ? palette.accent : palette.accentSoft }}>
                 <Icon size={20} color={it.primary ? palette.white : palette.accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15.5, fontWeight: '600', color: palette.ink }}>{it.label}</Text>
-                <Text style={{ fontSize: 12.5, color: palette.muted, marginTop: 1 }}>{it.sub}</Text>
+                <Text style={{ fontSize: font.size.base, fontWeight: '600', color: palette.ink }}>{it.label}</Text>
+                <Text style={{ fontSize: font.size.sm, color: palette.muted, marginTop: 1 }}>{it.sub}</Text>
               </View>
             </Pressable>
           );

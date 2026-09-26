@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Check, X } from 'lucide-react-native';
 
 import { ProductImage } from '@/components/ProductImage';
+import { Text } from '@/components/Text';
 import { categoryLabel, getProduct } from '@/core/catalog';
+import { RATING_LABELS } from '@/core/progress';
 import { routineAM, routinePM } from '@/core/shelfData';
-import { palette, space } from '@/core/theme';
+import { EMOJI_SIZE, font, palette, space } from '@/core/theme';
 
 const RATINGS = [
   { v: 0, e: '😣' },
@@ -16,7 +18,7 @@ const RATINGS = [
   { v: 3, e: '🙂' },
   { v: 4, e: '😍' },
 ];
-const eyebrow = { fontSize: 13, fontWeight: '800' as const, color: palette.muted, textTransform: 'uppercase' as const, letterSpacing: 1.4 };
+const eyebrow = { fontSize: font.size.sm, fontWeight: '700' as const, color: palette.muted, textTransform: 'uppercase' as const, letterSpacing: 1.4 };
 
 export default function Log() {
   const insets = useSafeAreaInsets();
@@ -34,20 +36,26 @@ export default function Log() {
 
   const Section = ({ title, ids }: { title: string; ids: string[] }) => (
     <View style={{ marginTop: space(4) }}>
-      <Text style={eyebrow}>{title}</Text>
+      <Text accessibilityRole="header" style={eyebrow}>{title}</Text>
       <View style={{ marginTop: 8, gap: 8 }}>
         {ids.map((id) => {
           const p = getProduct(id);
           if (!p) return null;
           const on = used.has(id);
           return (
-            <Pressable key={id} onPress={() => toggle(id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: on ? palette.accent : palette.line }}>
+            <Pressable
+              key={id}
+              onPress={() => toggle(id)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={`${p.name}, ${categoryLabel(p.category)}`}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: palette.surface, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: on ? palette.accent : palette.line }}>
               <ProductImage id={p.id} brand={p.brand} image={p.image} width={40} height={40} radius={12} />
               <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '600', color: palette.ink }}>{p.name}</Text>
-                <Text style={{ fontSize: 12, color: palette.muted }}>{categoryLabel(p.category)}</Text>
+                <Text numberOfLines={1} style={{ fontSize: font.size.base, fontWeight: '600', color: palette.ink }}>{p.name}</Text>
+                <Text style={{ fontSize: font.size.xs, color: palette.muted }}>{categoryLabel(p.category)}</Text>
               </View>
-              <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? palette.accent : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: palette.line }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? palette.accent : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: palette.muted }}>
                 {on ? <Check size={15} color={palette.white} /> : null}
               </View>
             </Pressable>
@@ -60,23 +68,29 @@ export default function Log() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top + space(3) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(5) }}>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: palette.ink }}>Log today</Text>
-        <Pressable onPress={() => router.back()} hitSlop={10}><X size={24} color={palette.muted} /></Pressable>
+        <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink }}>Log today</Text>
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close"><X size={24} color={palette.muted} /></Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(5), paddingBottom: insets.bottom + space(6) }}>
-        <Text style={{ marginTop: space(3), fontSize: 13, color: palette.muted }}>Check off what you used and rate your skin today.</Text>
+        <Text style={{ marginTop: space(3), fontSize: font.size.sm, color: palette.muted }}>Check off what you used and rate your skin today.</Text>
         <Section title="Morning" ids={routineAM} />
         <Section title="Evening" ids={routinePM} />
-        <Text style={[eyebrow, { marginTop: space(5) }]}>How&apos;s your skin?</Text>
-        <View style={{ marginTop: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Text accessibilityRole="header" style={[eyebrow, { marginTop: space(5) }]}>How&apos;s your skin?</Text>
+        <View accessibilityRole="radiogroup" style={{ marginTop: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
           {RATINGS.map((r) => (
-            <Pressable key={r.v} onPress={() => setRating(r.v)} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: rating === r.v ? palette.accentSoft : palette.surface, borderWidth: 1, borderColor: rating === r.v ? palette.accent : palette.line }}>
-              <Text style={{ fontSize: 24 }}>{r.e}</Text>
+            <Pressable
+              key={r.v}
+              onPress={() => setRating(r.v)}
+              accessibilityRole="radio"
+              accessibilityLabel={RATING_LABELS[r.v]}
+              accessibilityState={{ checked: rating === r.v }}
+              style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: rating === r.v ? palette.accentSoft : palette.surface, borderWidth: 1, borderColor: rating === r.v ? palette.accent : palette.line }}>
+              <Text style={{ fontSize: EMOJI_SIZE }}>{r.e}</Text>
             </Pressable>
           ))}
         </View>
-        <Pressable onPress={() => router.back()} style={{ marginTop: space(6), alignItems: 'center', backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15 }}>
-          <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>Log today 🔥</Text>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Log today" style={{ marginTop: space(6), alignItems: 'center', backgroundColor: palette.accent, borderRadius: 999, paddingVertical: 15 }}>
+          <Text style={{ color: palette.white, fontSize: font.size.lg, fontWeight: '700' }}>Log today 🔥</Text>
         </Pressable>
       </ScrollView>
     </View>

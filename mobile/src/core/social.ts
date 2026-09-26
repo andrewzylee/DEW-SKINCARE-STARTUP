@@ -3,12 +3,12 @@
 import type { FeedActivity, Person, RankMove } from './types';
 
 export const people: Person[] = [
-  { id: 'emily', name: 'Emily Rker', handle: 'emilyskin', tint: '#0C8F62', skinType: 'oily', tone: 'light', undertone: 'neutral', bio: 'oily & acne-prone · glowy minimalist', location: 'Brooklyn, NY' },
-  { id: 'marcus', name: 'Marcus Vale', handle: 'marcusv', tint: '#4B83F0', skinType: 'combination', tone: 'tan', undertone: 'warm', bio: 'combination skin · SPF + skin tint everyday', location: 'Austin, TX' },
-  { id: 'devon', name: 'Devon Lee', handle: 'devonglow', tint: '#D7A13A', skinType: 'oily', tone: 'deep', undertone: 'warm', bio: 'budget beauty, big results', location: 'Chicago, IL' },
-  { id: 'priya', name: 'Priya N', handle: 'priyaderm', tint: '#EC6A5A', skinType: 'sensitive', tone: 'medium', undertone: 'warm', bio: 'sensitive skin · fragrance-free only', location: 'London, UK' },
-  { id: 'theo', name: 'Theo Park', handle: 'theoclears', tint: '#17B57F', skinType: 'oily', tone: 'light', undertone: 'cool', bio: 'K-beauty dewy · lashes + lip masks', location: 'Seoul, KR' },
-  { id: 'sam', name: 'Sam Ortiz', handle: 'samo', tint: '#8A8F99', skinType: 'dry', tone: 'fair', undertone: 'cool', bio: 'dry skin · bold glam era', location: 'Denver, CO' },
+  { id: 'emily', name: 'Emily Rker', handle: 'emilyskin', tint: '#0B855B', skinType: 'oily', tone: 'light', undertone: 'neutral', bio: 'oily & acne-prone · glowy minimalist', location: 'Brooklyn, NY' },
+  { id: 'marcus', name: 'Marcus Vale', handle: 'marcusv', tint: '#4172D1', skinType: 'combination', tone: 'tan', undertone: 'warm', bio: 'combination skin · SPF + skin tint everyday', location: 'Austin, TX' },
+  { id: 'devon', name: 'Devon Lee', handle: 'devonglow', tint: '#946F28', skinType: 'oily', tone: 'deep', undertone: 'warm', bio: 'budget beauty, big results', location: 'Chicago, IL' },
+  { id: 'priya', name: 'Priya N', handle: 'priyaderm', tint: '#BD5548', skinType: 'sensitive', tone: 'medium', undertone: 'warm', bio: 'sensitive skin · fragrance-free only', location: 'London, UK' },
+  { id: 'theo', name: 'Theo Park', handle: 'theoclears', tint: '#11845D', skinType: 'oily', tone: 'light', undertone: 'cool', bio: 'K-beauty dewy · lashes + lip masks', location: 'Seoul, KR' },
+  { id: 'sam', name: 'Sam Ortiz', handle: 'samo', tint: '#71757D', skinType: 'dry', tone: 'fair', undertone: 'cool', bio: 'dry skin · bold glam era', location: 'Denver, CO' },
 ];
 
 export const getPerson = (id: string): Person | undefined => people.find((p) => p.id === id);

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle } from 'lucide-react-native';
 
+import { Text } from '@/components/Text';
 import { supabase } from '@/core/supabase';
 import { isSupabaseConfigured } from '@/data/config';
 import { friendlyAuthError } from '@/core/validation';
-import { palette, radius, space } from '@/core/theme';
+import { font, palette, radius, space } from '@/core/theme';
 
 /**
  * Where every auth redirect lands: email confirmation, password reset and the Google OAuth
@@ -78,17 +79,18 @@ export default function AuthCallback() {
   if (error) {
     return (
       <View style={{ flex: 1, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', padding: space(7) }}>
-        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(200,80,70,0.1)', alignItems: 'center', justifyContent: 'center' }}>
-          <AlertCircle size={26} color={palette.tierF} />
+        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(168,67,47,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+          <AlertCircle size={26} color={palette.danger} />
         </View>
-        <Text style={{ marginTop: space(4), fontSize: 22, fontWeight: '800', color: palette.ink, textAlign: 'center' }}>
+        <Text accessibilityRole="header" style={{ marginTop: space(4), fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink, textAlign: 'center' }}>
           Couldn&apos;t finish signing you in
         </Text>
-        <Text style={{ marginTop: space(3), fontSize: 14.5, lineHeight: 21, color: palette.muted, textAlign: 'center', maxWidth: 340 }}>
+        <Text style={{ marginTop: space(3), fontSize: font.size.base, lineHeight: 21, color: palette.muted, textAlign: 'center', maxWidth: 340 }}>
           {error}
         </Text>
         <Pressable
           onPress={() => router.replace('/sign-in')}
+          accessibilityRole="button"
           style={({ pressed }) => ({
             marginTop: space(6),
             backgroundColor: palette.accent,
@@ -98,7 +100,7 @@ export default function AuthCallback() {
             opacity: pressed ? 0.85 : 1,
           })}
         >
-          <Text style={{ color: palette.white, fontSize: 15.5, fontWeight: '700' }}>Back to sign in</Text>
+          <Text style={{ color: palette.white, fontSize: font.size.base, fontWeight: '700' }}>Back to sign in</Text>
         </Pressable>
       </View>
     );
@@ -107,7 +109,7 @@ export default function AuthCallback() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', gap: space(4) }}>
       <ActivityIndicator size="large" color={palette.accent} />
-      <Text style={{ fontSize: 15, color: palette.muted }}>Signing you in…</Text>
+      <Text style={{ fontSize: font.size.base, color: palette.muted }}>Signing you in…</Text>
     </View>
   );
 }

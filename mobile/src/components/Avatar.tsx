@@ -1,4 +1,5 @@
-import { Image, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Text } from '@/components/Text';
 import { palette } from '@/core/theme';
 
 function initials(name: string): string {

@@ -6,7 +6,7 @@ export interface FeaturedList {
   id: string;
   title: string;
   subtitle: string;
-  tint: string; // hex cover wash
+  tint: string; // hex cover wash — white text sits on it, so keep it ≥4.5:1 against white
   productIds: string[];
   blurb: string; // the evidence-based rationale
   domain?: Domain;
@@ -17,7 +17,7 @@ export const featuredLists: FeaturedList[] = [
     id: 'budget-acne',
     title: 'Best Budget Acne Kit',
     subtitle: 'Clear skin under $60',
-    tint: '#0C8F62',
+    tint: '#0B855B',
     productIds: ['cerave-foaming-cleanser', 'differin-adapalene', 'paulas-choice-bha', 'cerave-daily-lotion', 'lrp-anthelios-clear'],
     blurb: 'Acne has four drivers at once — clogged pores, C. acnes bacteria, excess oil, and inflammation. This kit targets all four for under $60: a gentle cleanser, an OTC retinoid, an exfoliant, a light moisturizer, and daily SPF (non-negotiable with actives).',
   },
@@ -25,7 +25,7 @@ export const featuredLists: FeaturedList[] = [
     id: 'oily-spf',
     title: 'Top Oily-Skin SPFs',
     subtitle: 'No shine, no white cast',
-    tint: '#4B83F0',
+    tint: '#4172D1',
     productIds: ['boj-relief-sun', 'lrp-anthelios-clear'],
     blurb: 'Daily broad-spectrum SPF is the highest-evidence step for preventing photoaging and post-acne dark spots. For oily skin the best sunscreen is the one you will actually reapply — lightweight, non-comedogenic, no white cast.',
   },
@@ -33,7 +33,7 @@ export const featuredLists: FeaturedList[] = [
     id: 'holy-grail-serums',
     title: 'Holy-Grail Serums',
     subtitle: 'What moved the needle',
-    tint: '#D7A13A',
+    tint: '#946F28',
     productIds: ['ordinary-niacinamide', 'lrp-vitamin-c', 'krave-barrier'],
     blurb: 'A serum delivers one active at high concentration. These cover the best-evidence concerns without conflicting: niacinamide (oil + barrier), vitamin C (AM antioxidant + brightening), and a barrier-repair serum for when actives push too far.',
   },
@@ -41,7 +41,7 @@ export const featuredLists: FeaturedList[] = [
     id: 'clean-lips',
     title: 'Clean-Girl Lips',
     subtitle: 'The glazed-lip lineup',
-    tint: '#C27C60',
+    tint: '#9F664F',
     productIds: ['rhode-peptide-lip', 'summer-fridays-lip', 'nyx-butter-gloss'],
     blurb: 'The glazed-lip formula: hydrating, glossy, your-lips-but-better. Layer a peptide treatment under a tinted balm or gloss for that lit-from-within clean-girl finish that lasts.',
   },

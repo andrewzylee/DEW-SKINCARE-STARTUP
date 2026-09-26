@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowRight, Check, ChevronLeft } from 'lucide-react-native';
@@ -15,7 +15,8 @@ import {
   type Interest,
   type QuizQuestionId,
 } from '@/core/quiz';
-import { palette, radius, space } from '@/core/theme';
+import { Text } from '@/components/Text';
+import { EMOJI_SIZE, font, hitSlopFor, palette, radius, space } from '@/core/theme';
 import { useProfile } from '@/data/profile-store';
 
 type Phase = 'intro' | 'interests' | 'quiz' | 'reveal';
@@ -72,14 +73,14 @@ export default function Onboarding() {
       <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top + space(10), paddingBottom: insets.bottom + space(6), paddingHorizontal: space(6), justifyContent: 'space-between' }}>
         <View>
           <View style={{ alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, paddingHorizontal: 12, paddingVertical: 5, marginBottom: space(5) }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: palette.muted, letterSpacing: 2 }}>DEW</Text>
+            <Text style={{ fontSize: font.size.xs, fontWeight: '700', color: palette.muted, letterSpacing: 2 }}>DEW</Text>
           </View>
-          <Text style={{ fontSize: 44, fontWeight: '800', color: palette.ink, letterSpacing: -1 }}>{quizIntro.title}</Text>
-          <Text style={{ marginTop: space(4), fontSize: 17, lineHeight: 24, color: palette.muted, maxWidth: 340 }}>{quizIntro.subtitle}</Text>
+          <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.display, fontWeight: '600', color: palette.ink, lineHeight: 52, letterSpacing: -0.5 }}>{quizIntro.title}</Text>
+          <Text style={{ marginTop: space(4), fontSize: font.size.lg, lineHeight: 24, color: palette.muted, maxWidth: 340 }}>{quizIntro.subtitle}</Text>
         </View>
         <View>
           <CTA label={quizIntro.cta} onPress={() => setPhase('interests')} />
-          <Text style={{ marginTop: space(4), textAlign: 'center', fontSize: 13, color: palette.muted }}>No face, no photos. Just what works.</Text>
+          <Text style={{ marginTop: space(4), textAlign: 'center', fontSize: font.size.sm, color: palette.muted }}>No face, no photos. Just what works.</Text>
         </View>
       </View>
     );
@@ -91,24 +92,31 @@ export default function Onboarding() {
     return (
       <View style={{ flex: 1, backgroundColor: palette.bg }}>
         <View style={{ paddingTop: insets.top + space(3), paddingHorizontal: space(5) }}>
-          <Pressable onPress={() => setPhase('intro')} hitSlop={10}><ChevronLeft size={22} color={palette.muted} /></Pressable>
+          <Pressable onPress={() => setPhase('intro')} hitSlop={hitSlopFor(22)} accessibilityRole="button" accessibilityLabel="Back"><ChevronLeft size={22} color={palette.muted} /></Pressable>
         </View>
         <ScrollView contentContainerStyle={{ paddingHorizontal: space(5), paddingTop: space(4), paddingBottom: space(4) }}>
-          <Text style={{ fontSize: 32, fontWeight: '800', color: palette.ink, lineHeight: 38 }}>What are you into?</Text>
-          <Text style={{ marginTop: space(2), fontSize: 15, color: palette.muted }}>Pick anything — we'll shape your app around it. No gender boxes here.</Text>
+          <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.hero, fontWeight: '600', color: palette.ink, lineHeight: 38 }}>What are you into?</Text>
+          <Text style={{ marginTop: space(2), fontSize: font.size.base, color: palette.muted }}>Pick anything — we'll shape your app around it. No gender boxes here.</Text>
           <View style={{ marginTop: space(5), gap: 10 }}>
             {INTEREST_ORDER.map((i) => {
               const meta = INTEREST_META[i];
               const on = interests.includes(i);
               return (
-                <Pressable key={i} onPress={() => toggle(i)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, borderWidth: 1, borderColor: on ? palette.accent : palette.line, backgroundColor: on ? 'rgba(110,125,95,0.06)' : palette.surface, paddingHorizontal: 16, paddingVertical: 16 }}>
-                  <Text style={{ fontSize: 22 }}>{meta.emoji}</Text>
+                <Pressable
+                  key={i}
+                  onPress={() => toggle(i)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: on }}
+                  accessibilityLabel={`${meta.label}${meta.live ? '' : ', coming soon'}. ${meta.hint}`}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, borderWidth: 1, borderColor: on ? palette.accent : palette.line, backgroundColor: on ? 'rgba(98,113,83,0.06)' : palette.surface, paddingHorizontal: 16, paddingVertical: 16 }}
+                >
+                  <Text style={{ fontSize: EMOJI_SIZE }}>{meta.emoji}</Text>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={{ fontSize: 17, fontWeight: '700', color: palette.ink }}>{meta.label}</Text>
-                      {!meta.live ? <View style={{ borderRadius: 999, backgroundColor: 'rgba(46,46,46,0.06)', paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ fontSize: 10, fontWeight: '800', color: palette.muted, letterSpacing: 0.5 }}>SOON</Text></View> : null}
+                      <Text style={{ fontSize: font.size.lg, fontWeight: '700', color: palette.ink }}>{meta.label}</Text>
+                      {!meta.live ? <View style={{ borderRadius: 999, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ fontSize: font.size.xs, fontWeight: '700', color: palette.muted, letterSpacing: 0.5 }}>SOON</Text></View> : null}
                     </View>
-                    <Text style={{ marginTop: 2, fontSize: 13, color: palette.muted }}>{meta.hint}</Text>
+                    <Text style={{ marginTop: 2, fontSize: font.size.sm, color: palette.muted }}>{meta.hint}</Text>
                   </View>
                   <CheckCircle on={on} />
                 </Pressable>
@@ -128,22 +136,39 @@ export default function Onboarding() {
     return (
       <View style={{ flex: 1, backgroundColor: palette.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: insets.top + space(3), paddingHorizontal: space(5) }}>
-          <Pressable onPress={back} hitSlop={10}><ChevronLeft size={22} color={palette.muted} /></Pressable>
-          <View style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: 'rgba(46,46,46,0.08)', overflow: 'hidden' }}>
-            <View style={{ width: `${visible.length ? (index / visible.length) * 100 : 0}%`, height: '100%', borderRadius: 999, backgroundColor: palette.accent }} />
+          <Pressable onPress={back} hitSlop={hitSlopFor(22)} accessibilityRole="button" accessibilityLabel="Back"><ChevronLeft size={22} color={palette.muted} /></Pressable>
+          {/* Counts the question you're on, so question 1 shows progress and the last one reads full. */}
+          <View
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel="Quiz progress"
+            accessibilityValue={{ min: 0, max: visible.length, now: index + 1, text: `Question ${index + 1} of ${visible.length}` }}
+            style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: 'rgba(46,46,46,0.08)', overflow: 'hidden' }}
+          >
+            <View style={{ width: `${visible.length ? ((index + 1) / visible.length) * 100 : 0}%`, height: '100%', borderRadius: 999, backgroundColor: palette.accent }} />
           </View>
-          <Text style={{ width: 40, textAlign: 'right', fontSize: 12, color: palette.muted }}>{index + 1}/{visible.length}</Text>
+          <Text style={{ width: 40, textAlign: 'right', fontSize: font.size.xs, color: palette.muted }}>{index + 1}/{visible.length}</Text>
         </View>
         <ScrollView contentContainerStyle={{ paddingHorizontal: space(5), paddingTop: space(5), paddingBottom: insets.bottom + space(6) }}>
-          <Text style={{ fontSize: 30, fontWeight: '800', color: palette.ink, lineHeight: 36 }}>{current.prompt}</Text>
-          {current.subtitle ? <Text style={{ marginTop: space(2), fontSize: 15, color: palette.muted }}>{current.subtitle}</Text> : null}
+          <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.hero, fontWeight: '600', color: palette.ink, lineHeight: 38 }}>{current.prompt}</Text>
+          {current.subtitle ? <Text style={{ marginTop: space(2), fontSize: font.size.base, color: palette.muted }}>{current.subtitle}</Text> : null}
           <View style={{ marginTop: space(5), gap: 10 }}>
-            {current.options.map((o) => (
-              <Pressable key={o.value} onPress={() => pick(o.value)} style={({ pressed }) => ({ borderRadius: 22, borderWidth: 1, borderColor: palette.line, backgroundColor: pressed ? 'rgba(110,125,95,0.06)' : palette.surface, paddingHorizontal: 18, paddingVertical: 16 })}>
-                <Text style={{ fontSize: 17, fontWeight: '700', color: palette.ink }}>{o.label}</Text>
-                {o.hint ? <Text style={{ marginTop: 2, fontSize: 13.5, color: palette.muted }}>{o.hint}</Text> : null}
-              </Pressable>
-            ))}
+            {current.options.map((o) => {
+              // Going back shows the answer you already gave.
+              const chosen = answers[current.id] === o.value;
+              return (
+                <Pressable
+                  key={o.value}
+                  onPress={() => pick(o.value)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: chosen }}
+                  style={({ pressed }) => ({ borderRadius: 22, borderWidth: 1, borderColor: chosen ? palette.accent : palette.line, backgroundColor: pressed || chosen ? 'rgba(98,113,83,0.06)' : palette.surface, paddingHorizontal: 18, paddingVertical: 16 })}
+                >
+                  <Text style={{ fontSize: font.size.lg, fontWeight: '700', color: palette.ink }}>{o.label}</Text>
+                  {o.hint ? <Text style={{ marginTop: 2, fontSize: font.size.sm, color: palette.muted }}>{o.hint}</Text> : null}
+                </Pressable>
+              );
+            })}
           </View>
         </ScrollView>
       </View>
@@ -155,8 +180,8 @@ export default function Onboarding() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top + space(10), paddingBottom: insets.bottom + space(6), paddingHorizontal: space(6), justifyContent: 'space-between' }}>
       <View>
-        <Text style={{ fontSize: 40, fontWeight: '800', color: palette.ink, lineHeight: 46, letterSpacing: -0.5 }}>You're all set.</Text>
-        <Text style={{ marginTop: space(3), fontSize: 16, lineHeight: 23, color: palette.muted }}>
+        <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.display, fontWeight: '600', color: palette.ink, lineHeight: 52, letterSpacing: -0.5 }}>You're all set.</Text>
+        <Text style={{ marginTop: space(3), fontSize: font.size.lg, lineHeight: 23, color: palette.muted }}>
           Tuned to <Text style={{ fontWeight: '700', color: palette.ink }}>{SKIN_LABEL[profile.skinType]}</Text> skin and your goal to <Text style={{ fontWeight: '700', color: palette.ink }}>{GOAL_LABEL[profile.goal]}</Text>.
         </Text>
         <View style={{ marginTop: space(5), gap: 10 }}>
@@ -173,8 +198,8 @@ export default function Onboarding() {
 
 function CTA({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: palette.accent, borderRadius: radius.pill, paddingVertical: 16, opacity: disabled ? 0.5 : pressed ? 0.9 : 1 })}>
-      <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>{label}</Text>
+    <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: palette.accent, borderRadius: radius.pill, paddingVertical: 16, opacity: disabled ? 0.5 : pressed ? 0.9 : 1 })}>
+      <Text style={{ color: palette.white, fontSize: font.size.lg, fontWeight: '700' }}>{label}</Text>
       <ArrowRight size={18} color={palette.white} />
     </Pressable>
   );
@@ -182,7 +207,7 @@ function CTA({ label, onPress, disabled }: { label: string; onPress: () => void;
 
 function CheckCircle({ on }: { on: boolean }) {
   return (
-    <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 0 : 1.5, borderColor: palette.line, backgroundColor: on ? palette.accent : 'transparent' }}>
+    <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 0 : 1.5, borderColor: palette.muted, backgroundColor: on ? palette.accent : 'transparent' }}>
       {on ? <Check size={14} color={palette.white} strokeWidth={3} /> : null}
     </View>
   );
@@ -191,8 +216,8 @@ function CheckCircle({ on }: { on: boolean }) {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: palette.surface, borderRadius: 16, borderWidth: 1, borderColor: palette.line, paddingHorizontal: 16, paddingVertical: 14 }}>
-      <Text style={{ fontSize: 12, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</Text>
-      <Text style={{ fontSize: 15, fontWeight: '700', color: palette.ink, textTransform: 'capitalize' }}>{value}</Text>
+      <Text style={{ fontSize: font.size.xs, fontWeight: '700', color: palette.muted, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</Text>
+      <Text style={{ fontSize: font.size.base, fontWeight: '700', color: palette.ink, textTransform: 'capitalize' }}>{value}</Text>
     </View>
   );
 }

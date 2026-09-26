@@ -16,7 +16,9 @@ export const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // Skin-rating heat-map ramp (0 Rough → 4 Great): coral → orange → gold → green → emerald.
 export const RATING_LABELS = ['Rough', 'Off', 'Okay', 'Good', 'Great'];
-export const RATING_COLORS = ['#ec6a5a', '#e8935a', '#d7a13a', '#2fb985', '#0c8f62'];
+// Day numbers and labels sit on these fills in readableOn() color (ink on the light ones, white on
+// the deep green). The ends are nudged from the web's #ec6a5a / #0c8f62 so text on them clears 4.5:1.
+export const RATING_COLORS = ['#ed7364', '#e8935a', '#d7a13a', '#2fb985', '#0b855b'];
 
 const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 const parse = (key: string) => {

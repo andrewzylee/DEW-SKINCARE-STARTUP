@@ -1,11 +1,12 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import { ArrowLeft, Flame, Heart, MessageCircle, Sparkles, UserPlus } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { Text } from '@/components/Text';
 import { getPerson, usingDemoGraph } from '@/core/socialSource';
-import { palette, radius, space } from '@/core/theme';
+import { font, hitSlopFor, palette, radius, space } from '@/core/theme';
 
 // Notifications — social pings derived from the sample graph (demo). The Feed bell opens this.
 type Kind = 'follow' | 'like' | 'comment' | 'twin' | 'milestone';
@@ -33,6 +34,15 @@ const SAMPLE_NOTIFS: Notif[] = [
 
 const NOTIFS: Notif[] = usingDemoGraph ? SAMPLE_NOTIFS : [];
 
+// "12m" reads as "12 meters" to a screen reader — spell the unit out.
+const UNIT = { m: 'minute', h: 'hour', d: 'day', w: 'week' } as const;
+const spokenTime = (t: string): string => {
+  const m = t.match(/^(\d+)([mhdw])$/);
+  if (!m) return t;
+  const n = Number(m[1]);
+  return `${n} ${UNIT[m[2] as keyof typeof UNIT]}${n === 1 ? '' : 's'} ago`;
+};
+
 const KIND_ICON = { follow: UserPlus, like: Heart, comment: MessageCircle, twin: Sparkles, milestone: Flame } as const;
 const KIND_TINT = { follow: palette.accent, like: palette.tierF, comment: palette.tierB, twin: palette.makeup, milestone: palette.makeup } as const;
 
@@ -43,8 +53,8 @@ export default function NotificationsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: insets.top + space(4), paddingHorizontal: space(5), paddingBottom: space(2) }}>
-        <Pressable onPress={() => router.back()} hitSlop={8}><ArrowLeft size={22} color={palette.ink} /></Pressable>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: palette.ink }}>Notifications</Text>
+        <Pressable onPress={() => router.back()} hitSlop={hitSlopFor(22)} accessibilityRole="button" accessibilityLabel="Back"><ArrowLeft size={22} color={palette.ink} /></Pressable>
+        <Text accessibilityRole="header" style={{ fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink }}>Notifications</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(5), paddingTop: space(2), paddingBottom: insets.bottom + space(8) }} showsVerticalScrollIndicator={false}>
@@ -53,8 +63,8 @@ export default function NotificationsScreen() {
             <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: palette.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={24} color={palette.accent} />
             </View>
-            <Text style={{ marginTop: space(4), fontSize: 16, fontWeight: '700', color: palette.ink }}>Nothing yet</Text>
-            <Text style={{ marginTop: space(2), fontSize: 14, lineHeight: 20, color: palette.muted, textAlign: 'center' }}>
+            <Text style={{ marginTop: space(4), fontSize: font.size.lg, fontWeight: '700', color: palette.ink }}>Nothing yet</Text>
+            <Text style={{ marginTop: space(2), fontSize: font.size.base, lineHeight: 20, color: palette.muted, textAlign: 'center' }}>
               When people follow you or react to your rankings, it&apos;ll show up here.
             </Text>
           </View>
@@ -67,6 +77,8 @@ export default function NotificationsScreen() {
             <Pressable
               key={n.id}
               onPress={() => router.push(n.href)}
+              accessibilityRole="button"
+              accessibilityLabel={`${n.unread ? 'Unread. ' : ''}${first ? `${first} ` : ''}${n.action}, ${spokenTime(n.time)}`}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.lg, backgroundColor: n.unread ? palette.accentSoft : palette.surface, borderWidth: 1, borderColor: n.unread ? 'transparent' : palette.line, padding: 12, marginBottom: 8 }}
             >
               <View>
@@ -84,11 +96,11 @@ export default function NotificationsScreen() {
                 ) : null}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14.5, color: palette.ink, lineHeight: 20 }}>
+                <Text style={{ fontSize: font.size.base, color: palette.ink, lineHeight: 20 }}>
                   {first ? <Text style={{ fontWeight: '700' }}>{first} </Text> : null}
                   {n.action}
                 </Text>
-                <Text style={{ fontSize: 12, color: palette.muted, marginTop: 1 }}>{n.time}</Text>
+                <Text style={{ fontSize: font.size.xs, color: palette.muted, marginTop: 1 }}>{n.time}</Text>
               </View>
               {n.unread ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: palette.accent }} /> : null}
             </Pressable>

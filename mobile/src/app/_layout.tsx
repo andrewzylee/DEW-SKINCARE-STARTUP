@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
+import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { BrandFontsProvider } from '@/components/Text';
 import { AuthProvider, useAuth } from '@/core/auth';
+import { FONT_FILES } from '@/core/fonts';
 import { FollowProvider } from '@/data/follow-store';
 import { ProfileProvider, useProfile } from '@/data/profile-store';
 import { palette } from '@/core/theme';
@@ -71,16 +74,27 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // Inter + Cormorant load while the splash is up (the session and profile load alongside), and no
+  // screen mounts until they're in, so the first frame is already on-brand. If they fail to load,
+  // carry on in the system font rather than block the app.
+  const [fontsLoaded, fontError] = useFonts(FONT_FILES);
+  useEffect(() => {
+    if (fontError) console.warn('[fonts] Brand fonts failed to load; using the system font.', fontError);
+  }, [fontError]);
+  const fontsSettled = fontsLoaded || !!fontError;
+
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <ProfileProvider>
-          <FollowProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </FollowProvider>
-        </ProfileProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <BrandFontsProvider ready={fontsLoaded}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <FollowProvider>
+              <StatusBar style="dark" />
+              {fontsSettled ? <RootNavigator /> : null}
+            </FollowProvider>
+          </ProfileProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </BrandFontsProvider>
   );
 }

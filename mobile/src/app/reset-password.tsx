@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Eye, EyeOff, KeyRound } from 'lucide-react-native';
 
+import { Text, TextInput } from '@/components/Text';
+import { useAnnounce } from '@/core/a11y';
 import { useAuth } from '@/core/auth';
 import { friendlyAuthError, passwordError } from '@/core/validation';
-import { palette, radius, space } from '@/core/theme';
+import { font, hitSlopFor, palette, radius, space } from '@/core/theme';
 
 // Where a password-reset link lands. Supabase has already exchanged the link's token for a session
 // by the time we get here (auth.tsx sets recoveringPassword on the PASSWORD_RECOVERY event), so all
@@ -19,6 +21,7 @@ export default function ResetPassword() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useAnnounce(error);
 
   const submit = async () => {
     setError(null);
@@ -42,7 +45,7 @@ export default function ResetPassword() {
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 13,
-    fontSize: 15.5,
+    fontSize: font.size.base,
     color: palette.ink,
   } as const;
 
@@ -55,9 +58,9 @@ export default function ResetPassword() {
         <View style={{ alignSelf: 'center', width: 60, height: 60, borderRadius: 30, backgroundColor: palette.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
           <KeyRound size={26} color={palette.accent} />
         </View>
-        <Text style={{ marginTop: space(4), fontSize: 26, fontWeight: '800', color: palette.ink, textAlign: 'center' }}>Set a new password</Text>
+        <Text accessibilityRole="header" style={{ marginTop: space(4), fontFamily: font.display, fontSize: font.size.title, fontWeight: '600', color: palette.ink, textAlign: 'center' }}>Set a new password</Text>
         {email ? (
-          <Text style={{ marginTop: space(2), fontSize: 14.5, color: palette.muted, textAlign: 'center' }}>for {email}</Text>
+          <Text style={{ marginTop: space(2), fontSize: font.size.base, color: palette.muted, textAlign: 'center' }}>for {email}</Text>
         ) : null}
 
         <View style={{ marginTop: space(5), gap: 10 }}>
@@ -66,6 +69,7 @@ export default function ResetPassword() {
               value={password}
               onChangeText={setPassword}
               placeholder="New password"
+              accessibilityLabel="New password"
               placeholderTextColor={palette.muted}
               secureTextEntry={!show}
               autoCapitalize="none"
@@ -76,7 +80,8 @@ export default function ResetPassword() {
             />
             <Pressable
               onPress={() => setShow((s) => !s)}
-              hitSlop={10}
+              hitSlop={hitSlopFor(19)}
+              accessibilityRole="button"
               accessibilityLabel={show ? 'Hide password' : 'Show password'}
               style={{ position: 'absolute', right: 14 }}
             >
@@ -88,6 +93,7 @@ export default function ResetPassword() {
             value={confirm}
             onChangeText={setConfirm}
             placeholder="Confirm new password"
+            accessibilityLabel="Confirm new password"
             placeholderTextColor={palette.muted}
             secureTextEntry={!show}
             autoCapitalize="none"
@@ -100,11 +106,14 @@ export default function ResetPassword() {
           />
         </View>
 
-        {error ? <Text style={{ marginTop: space(3), fontSize: 13.5, color: palette.tierF, textAlign: 'center' }}>{error}</Text> : null}
+        {error ? <Text accessibilityRole="alert" style={{ marginTop: space(3), fontSize: font.size.sm, color: palette.danger, textAlign: 'center' }}>{error}</Text> : null}
 
         <Pressable
           onPress={submit}
           disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Update password"
+          accessibilityState={{ busy, disabled: busy }}
           style={({ pressed }) => ({
             marginTop: space(5),
             alignItems: 'center',
@@ -115,11 +124,11 @@ export default function ResetPassword() {
             opacity: pressed || busy ? 0.85 : 1,
           })}
         >
-          {busy ? <ActivityIndicator color={palette.white} /> : <Text style={{ color: palette.white, fontSize: 16, fontWeight: '700' }}>Update password</Text>}
+          {busy ? <ActivityIndicator color={palette.white} /> : <Text style={{ color: palette.white, fontSize: font.size.lg, fontWeight: '700' }}>Update password</Text>}
         </Pressable>
 
-        <Pressable onPress={() => signOut()} style={{ marginTop: space(5), alignSelf: 'center' }} hitSlop={8}>
-          <Text style={{ fontSize: 14, color: palette.muted }}>Cancel and sign out</Text>
+        <Pressable onPress={() => signOut()} accessibilityRole="button" style={{ marginTop: space(5), alignSelf: 'center' }} hitSlop={12}>
+          <Text style={{ fontSize: font.size.base, color: palette.muted }}>Cancel and sign out</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

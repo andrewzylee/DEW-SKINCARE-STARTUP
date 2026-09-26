@@ -1,9 +1,11 @@
 import type { ComponentProps } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs, useRouter } from 'expo-router';
 import { BarChart3, Compass, Newspaper, Plus, User } from 'lucide-react-native';
-import { palette } from '@/core/theme';
+import { Text } from '@/components/Text';
+import { TAB_LIST_ROLE } from '@/core/a11y';
+import { font, palette } from '@/core/theme';
 
 // Derive the exact tabBar props from expo-router's Tabs (avoids the standalone @react-navigation
 // type, which is a different, conflicting copy).
@@ -32,15 +34,22 @@ export function TabBar({ state, navigation }: TabBarProps) {
     const focused = activeName === name;
     const color = focused ? palette.accent : palette.muted;
     return (
-      <Pressable onPress={() => go(name)} style={{ flex: 1, alignItems: 'center', paddingVertical: 6 }}>
+      <Pressable
+        onPress={() => go(name)}
+        accessibilityRole="tab"
+        accessibilityLabel={LABELS[name]}
+        accessibilityState={{ selected: focused }}
+        style={{ flex: 1, alignItems: 'center', paddingVertical: 6 }}
+      >
         <Icon size={22} color={color} strokeWidth={focused ? 2.4 : 2} />
-        <Text style={{ marginTop: 3, fontSize: 11, color, fontWeight: focused ? '600' : '500' }}>{LABELS[name]}</Text>
+        <Text style={{ marginTop: 3, fontSize: font.size.xs, color, fontWeight: focused ? '600' : '500' }}>{LABELS[name]}</Text>
       </Pressable>
     );
   };
 
   return (
     <View
+      accessibilityRole={TAB_LIST_ROLE}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -53,7 +62,13 @@ export function TabBar({ state, navigation }: TabBarProps) {
     >
       <Tab name="index" />
       <Tab name="discover" />
-      <Pressable onPress={() => router.push('/add')} style={{ flex: 1, alignItems: 'center' }}>
+      <Pressable
+        onPress={() => router.push('/add')}
+        accessibilityRole="button"
+        accessibilityLabel="Add"
+        accessibilityHint="Rank a product, log today, add a product, or start a trial"
+        style={{ flex: 1, alignItems: 'center' }}
+      >
         <View
           style={{
             width: 52,
